@@ -1,0 +1,645 @@
+@font-face {
+  font-family: 'HK Grotesk';
+  src: url('/fonts/hkgrotesk-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'HK Grotesk';
+  src: url('/fonts/hkgrotesk-medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'HK Grotesk';
+  src: url('/fonts/hkgrotesk-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'HK Grotesk';
+  src: url('/fonts/hkgrotesk-bolditalic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* =========================================================
+     NAUTILUS 4010 - PALETA OFICIAL (Manual de Identidad)
+     - Azul Marino:    #010124 (Profundidad, confianza, tecnología)
+     - Amarillo Dorado:#EDB824 (Energía, innovación, liderazgo)
+     - Morado:         #451F66 (Creatividad, visión, transformación)
+     - Blanco:         #FFFFFF (Claridad y colaboración)
+     ========================================================= */
+  --nautilus-navy: #010124;
+  --nautilus-gold: #EDB824;
+  --nautilus-purple: #451F66;
+  --nautilus-white: #FFFFFF;
+  --nautilus-gray: #8F95B2;
+  --nautilus-gray-dark: #3F4460;
+
+  /* Glassmorphic Surfaces - Reference Dribbble FinTech */
+  --surface-card: rgba(14, 14, 46, 0.65);
+  --surface-card-hover: rgba(22, 22, 64, 0.75);
+  --surface-inner: rgba(255, 255, 255, 0.04);
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --surface-border-subtle: rgba(255, 255, 255, 0.04);
+
+  /* Acentos de Alianza y Estado con look de micro-brillo */
+  --alliance-blue: #3B82F6;
+  --alliance-blue-bg: rgba(59, 130, 246, 0.15);
+  --alliance-blue-border: rgba(96, 165, 250, 0.35);
+
+  --alliance-red: #EF4444;
+  --alliance-red-bg: rgba(239, 68, 68, 0.15);
+  --alliance-red-border: rgba(248, 113, 113, 0.35);
+
+  --state-green: #10B981;
+  --state-green-bg: rgba(16, 185, 129, 0.15);
+  --state-green-border: rgba(52, 211, 153, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  background-color: var(--nautilus-navy);
+  color: var(--nautilus-white);
+  font-family: 'HK Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(69, 31, 102, 0.45) 0%, rgba(1, 1, 36, 0.95) 60%),
+    radial-gradient(circle at 100% 100%, rgba(237, 184, 36, 0.06) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* ================= CONTENEDOR WEB RESPONSIVE PARA MÓVIL (PWA / WEB APP REAL) ================= */
+
+.app-viewport {
+  width: 100%;
+  max-width: 480px; /* Ancho ergonómico estándar para lectura móvil en web */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: transparent;
+  padding: 16px 16px 110px 16px;
+}
+
+/* Status Bar Superior estilo iOS */
+.ios-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 28px 8px 28px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nautilus-white);
+  letter-spacing: -0.2px;
+}
+
+.ios-status-bar-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Top App Header con Avatar / Símbolo */
+.fintech-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 24px 16px 24px;
+}
+
+.user-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--nautilus-purple) 0%, var(--nautilus-navy) 100%);
+  border: 1.5px solid var(--nautilus-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nautilus-gold);
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.header-action-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--nautilus-white);
+  transition: all 0.2s ease;
+}
+
+.header-action-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ================= BALANCE / PUNTOS CARD HERO ================= */
+
+.hero-balance-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px 20px 24px;
+  text-align: center;
+}
+
+.hero-balance-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nautilus-gray);
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+
+.hero-balance-amount {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  color: var(--nautilus-white);
+  line-height: 1.1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.hero-balance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(237, 184, 36, 0.12);
+  border: 1px solid rgba(237, 184, 36, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--nautilus-gold);
+  margin-top: 8px;
+}
+
+/* ================= 3-BUTTON ACTION DOCK ================= */
+
+.action-dock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 24px 22px 24px;
+}
+
+.dock-pill-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 24px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nautilus-white);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dock-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dock-pill-btn:active {
+  transform: scale(0.97);
+}
+
+.dock-circle-plus {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--nautilus-white);
+  color: #010124;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.25);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dock-circle-plus:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 28px rgba(255, 255, 255, 0.4);
+}
+
+.dock-circle-plus:active {
+  transform: scale(0.95);
+}
+
+/* ================= DUAL KPI SPLIT CARDS (Income / Expense style) ================= */
+
+.dual-cards-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 24px 20px 24px;
+}
+
+.fintech-kpi-card {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 22px;
+  padding: 16px 16px 14px 16px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(0, 0, 10, 0.4);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.fintech-kpi-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.fintech-kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.fintech-kpi-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nautilus-gray);
+}
+
+.fintech-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--nautilus-white);
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.fintech-kpi-sub {
+  font-size: 11px;
+  color: var(--nautilus-gray);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ================= RECENT / FORM SECTION CONTAINER ================= */
+
+.fintech-content-section {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--nautilus-white);
+  letter-spacing: -0.2px;
+}
+
+.section-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--nautilus-gold);
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* Avatar Carousel (Send Again style -> Equipos / Scouters) */
+.avatar-row-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 4px 2px 8px 2px;
+  scrollbar-width: none;
+}
+
+.avatar-row-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.avatar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.avatar-photo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--nautilus-white);
+  transition: all 0.2s ease;
+}
+
+.avatar-item:hover .avatar-photo,
+.avatar-item.active .avatar-photo {
+  border-color: var(--nautilus-gold);
+  background: rgba(237, 184, 36, 0.15);
+  color: var(--nautilus-gold);
+  box-shadow: 0 0 16px rgba(237, 184, 36, 0.35);
+}
+
+.avatar-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--nautilus-gray);
+  max-width: 54px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Lista Glassmorphic (Recent Transactions / Metricas de Juego) */
+.glass-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.glass-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  backdrop-filter: blur(16px);
+  transition: all 0.2s ease;
+}
+
+.glass-list-item:hover {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.glass-list-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.item-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nautilus-gold);
+}
+
+.item-main-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nautilus-white);
+  line-height: 1.2;
+}
+
+.item-sub-text {
+  font-size: 11px;
+  color: var(--nautilus-gray);
+  margin-top: 2px;
+}
+
+.item-right-amount {
+  text-align: right;
+}
+
+.amount-text {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--nautilus-white);
+}
+
+.amount-text.positive {
+  color: var(--nautilus-gold);
+}
+
+/* ================= FLOATING ACTION BUTTON (EL BOTÓN LIME / SPARKLE DE LA FOTO) ================= */
+
+.fab-sparkle {
+  position: absolute;
+  bottom: 96px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #D9F99D; /* Soft Lime Glow del mock */
+  color: #010124;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(217, 249, 157, 0.45);
+  z-index: 90;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fab-sparkle:hover {
+  transform: scale(1.08);
+  box-shadow: 0 14px 34px rgba(217, 249, 157, 0.6);
+}
+
+.fab-sparkle:active {
+  transform: scale(0.95);
+}
+
+/* ================= BARRA DE NAVEGACIÓN INFERIOR PWA ================= */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(7, 4, 24, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 10px 18px 24px 18px;
+  z-index: 100;
+}
+
+.nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--nautilus-gray);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 8px;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+.nav-link svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--nautilus-gray);
+  stroke-width: 2;
+  transition: stroke 0.2s ease;
+}
+
+.nav-link.active, .nav-link:hover {
+  color: var(--nautilus-gold);
+}
+
+.nav-link.active svg, .nav-link:hover svg {
+  stroke: var(--nautilus-gold);
+  filter: drop-shadow(0 0 6px rgba(237, 184, 36, 0.6));
+}
+
+/* ================= CONTADORES (+ / -) COMPACTOS FINTECH ================= */
+
+.fintech-counter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fintech-btn-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--nautilus-white);
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fintech-btn-circle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.fintech-btn-circle:active {
+  transform: scale(0.9);
+}
+
+.fintech-btn-circle.gold {
+  background: var(--nautilus-gold);
+  color: #010124;
+  border: none;
+  box-shadow: 0 4px 12px rgba(237, 184, 36, 0.35);
+}
+
+.fintech-counter-num {
+  font-size: 16px;
+  font-weight: 800;
+  min-width: 24px;
+  text-align: center;
+  color: var(--nautilus-white);
+}
+
+/* ================= TOAST ================= */
+
+.toast {
+  position: fixed;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-120px);
+  background: rgba(14, 10, 36, 0.92);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(237, 184, 36, 0.4);
+  color: var(--nautilus-white);
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(237, 184, 36, 0.3);
+  z-index: 300;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
