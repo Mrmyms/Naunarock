@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import BottomNav from '@/components/BottomNav';
+import { MatchPhaseProvider } from '@/context/MatchPhaseContext';
 
 export const metadata: Metadata = {
   title: 'NAUTILUS 4010 • Building a Legacy | Scouting FTC',
@@ -31,10 +32,12 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <div className="app-viewport">
-          {children}
-          <BottomNav />
-        </div>
+        <MatchPhaseProvider>
+          <div className="app-viewport">
+            {children}
+            <BottomNav />
+          </div>
+        </MatchPhaseProvider>
       </body>
     </html>
   );

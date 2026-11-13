@@ -5,6 +5,7 @@ import BiobuzzFieldSelector, {
   BLUE_START_ZONES,
   RED_START_ZONES,
 } from '@/components/BiobuzzFieldSelector';
+import { useMatchPhase } from '@/context/MatchPhaseContext';
 
 type ScheduleTeam = {
   teamNumber: number;
@@ -129,7 +130,7 @@ export default function MatchScoutingPage() {
   const [match, setMatch] = useState(1);
   const [team, setTeam] = useState(4010);
   const [scouter, setScouter] = useState('');
-  const [currentTab, setCurrentTab] = useState<'auto' | 'teleop' | 'endgame'>('auto');
+  const { currentTab, setCurrentTab } = useMatchPhase();
 
   // Evento y Schedule (FTCScout)
   const [eventInfo, setEventInfo] = useState<EventInfo | null>(null);
@@ -515,66 +516,6 @@ export default function MatchScoutingPage() {
         </button>
       </div>
 
-      {/* Tabs Principales: Autónomo / TeleOp / Endgame */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '18px' }}>
-        <button
-          onClick={() => setCurrentTab('auto')}
-          className="dock-pill-btn"
-          style={{
-            background: currentTab === 'auto' ? 'rgba(237, 184, 36, 0.16)' : 'rgba(255, 255, 255, 0.03)',
-            borderColor: currentTab === 'auto' ? 'var(--nautilus-gold)' : 'rgba(255, 255, 255, 0.08)',
-            color: currentTab === 'auto' ? 'var(--nautilus-gold)' : 'var(--nautilus-gray)',
-            padding: '10px 4px',
-            fontSize: '11px',
-            flexDirection: 'column',
-            gap: '2px',
-          }}
-        >
-          <span>AUTÓNOMO</span>
-          <span style={{ fontSize: '13px', fontWeight: 800, color: currentTab === 'auto' ? 'var(--nautilus-white)' : 'var(--nautilus-gray)' }}>
-            {autoScore} pts
-          </span>
-        </button>
-
-        <button
-          onClick={() => setCurrentTab('teleop')}
-          className="dock-pill-btn"
-          style={{
-            background: currentTab === 'teleop' ? 'rgba(237, 184, 36, 0.16)' : 'rgba(255, 255, 255, 0.03)',
-            borderColor: currentTab === 'teleop' ? 'var(--nautilus-gold)' : 'rgba(255, 255, 255, 0.08)',
-            color: currentTab === 'teleop' ? 'var(--nautilus-gold)' : 'var(--nautilus-gray)',
-            padding: '10px 4px',
-            fontSize: '11px',
-            flexDirection: 'column',
-            gap: '2px',
-          }}
-        >
-          <span>TELEOP</span>
-          <span style={{ fontSize: '13px', fontWeight: 800, color: currentTab === 'teleop' ? 'var(--nautilus-white)' : 'var(--nautilus-gray)' }}>
-            {teleScore} pts
-          </span>
-        </button>
-
-        <button
-          onClick={() => setCurrentTab('endgame')}
-          className="dock-pill-btn"
-          style={{
-            background: currentTab === 'endgame' ? 'rgba(237, 184, 36, 0.16)' : 'rgba(255, 255, 255, 0.03)',
-            borderColor: currentTab === 'endgame' ? 'var(--nautilus-gold)' : 'rgba(255, 255, 255, 0.08)',
-            color: currentTab === 'endgame' ? 'var(--nautilus-gold)' : 'var(--nautilus-gray)',
-            padding: '10px 4px',
-            fontSize: '11px',
-            flexDirection: 'column',
-            gap: '2px',
-          }}
-        >
-          <span>ENDGAME</span>
-          <span style={{ fontSize: '13px', fontWeight: 800, color: currentTab === 'endgame' ? '#EF4444' : 'var(--nautilus-gray)' }}>
-            -{foulsScore} pts
-          </span>
-        </button>
-      </div>
-
       {/* Robot Selector Rápido & Schedule del Match */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -721,7 +662,7 @@ export default function MatchScoutingPage() {
             </div>
 
             <CounterRow
-              title="Auto Hive Tips (+20 pts)"
+              title="Auto Hive Tips"
               subtitle="Panales volteados en auto"
               value={autoHiveTips}
               onDecrement={() => setAutoHiveTips(Math.max(0, autoHiveTips - 1))}
@@ -729,7 +670,7 @@ export default function MatchScoutingPage() {
             />
 
             <CounterRow
-              title="Piezas en Auto (+2 pts)"
+              title="Piezas en Auto"
               subtitle="Polen o Néctar colocado"
               value={autoPollen}
               onDecrement={() => setAutoPollen(Math.max(0, autoPollen - 1))}
@@ -737,18 +678,18 @@ export default function MatchScoutingPage() {
             />
 
             <ToggleRow
-              title="Auto Leave (+3 pts)"
+              title="Auto Leave"
               subtitle="Despegó del muro perimetral"
               active={autoLeave}
-              activeLabel="SÍ (+3)"
+              activeLabel="SÍ"
               onToggle={() => setAutoLeave(!autoLeave)}
             />
 
             <ToggleRow
-              title="Auto Park (+5 pts)"
+              title="Auto Park"
               subtitle="Aparcado en Loading Zone"
               active={autoPark}
-              activeLabel="SÍ (+5)"
+              activeLabel="SÍ"
               onToggle={() => setAutoPark(!autoPark)}
             />
           </div>
@@ -758,7 +699,7 @@ export default function MatchScoutingPage() {
         {currentTab === 'teleop' && (
           <div className="open-list">
             <CounterRow
-              title="Hive Tips (+20 pts)"
+              title="Hive Tips"
               subtitle="Meta: 4 y 7 TIPS para RP"
               value={teleopHiveTips}
               onDecrement={() => setTeleopHiveTips(Math.max(0, teleopHiveTips - 1))}
@@ -790,7 +731,7 @@ export default function MatchScoutingPage() {
             </div>
 
             <CounterRow
-              title="Polen en Flor (+2 pts)"
+              title="Polen en Flor"
               subtitle="Puntúa si se posee la flor"
               value={flowerPollen}
               onDecrement={() => setFlowerPollen(Math.max(0, flowerPollen - 1))}
@@ -798,7 +739,7 @@ export default function MatchScoutingPage() {
             />
 
             <CounterRow
-              title="Néctar en Flor (+2 pts)"
+              title="Néctar en Flor"
               subtitle="Elementos de néctar depositados"
               value={flowerNectar}
               onDecrement={() => setFlowerNectar(Math.max(0, flowerNectar - 1))}
@@ -806,16 +747,16 @@ export default function MatchScoutingPage() {
             />
 
             <ToggleRow
-              title="Bottom Nectar Bonus (+5)"
+              title="Bottom Nectar Bonus"
               subtitle="Néctar más bajo en flor"
               active={bottomNectar}
-              activeLabel="SÍ (+5)"
+              activeLabel="SÍ"
               activeColor="#EDB824"
               onToggle={() => setBottomNectar(!bottomNectar)}
             />
 
             <CounterRow
-              title="Piezas en Garden (+1 pt)"
+              title="Piezas en Garden"
               subtitle="Acumuladas en su jardín"
               value={gardenElements}
               onDecrement={() => setGardenElements(Math.max(0, gardenElements - 1))}
@@ -837,10 +778,10 @@ export default function MatchScoutingPage() {
         {currentTab === 'endgame' && (
           <div className="open-list">
             <ToggleRow
-              title="Endgame Park (+5 pts)"
+              title="Endgame Park"
               subtitle="Aparcado al silbato final"
               active={teleopPark}
-              activeLabel="SÍ (+5)"
+              activeLabel="SÍ"
               onToggle={() => setTeleopPark(!teleopPark)}
             />
 
@@ -869,7 +810,7 @@ export default function MatchScoutingPage() {
             </div>
 
             <CounterRow
-              title="Faltas Menores (-5 pts)"
+              title="Faltas Menores"
               subtitle="Puntos otorgados al rival"
               value={minorFouls}
               onDecrement={() => setMinorFouls(Math.max(0, minorFouls - 1))}
@@ -878,7 +819,7 @@ export default function MatchScoutingPage() {
             />
 
             <CounterRow
-              title="Faltas Graves (-20 pts)"
+              title="Faltas Graves"
               subtitle="Interferencias mayores (G417)"
               value={majorFouls}
               onDecrement={() => setMajorFouls(Math.max(0, majorFouls - 1))}
