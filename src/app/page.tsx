@@ -807,21 +807,29 @@ export default function MatchScoutingPage() {
                 style={{ fontSize: '13px', fontWeight: 500 }}
               />
             </div>
+
+            {/* Botón Principal de Guardar al finalizar Endgame */}
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="dock-pill-btn"
+              style={{
+                marginTop: '8px',
+                background: 'var(--nautilus-gold)',
+                borderColor: 'var(--nautilus-gold)',
+                color: '#010124',
+                fontWeight: 800,
+                fontSize: '14px',
+                padding: '14px 20px',
+                boxShadow: '0 8px 24px rgba(237, 184, 36, 0.35)',
+                opacity: submitting ? 0.6 : 1,
+              }}
+            >
+              {submitting ? 'Guardando...' : `Guardar Match #${match}`}
+            </button>
           </div>
         )}
       </div>
-
-      {/* Botón Flotante para Guardar */}
-      <button
-        onClick={handleSubmit}
-        disabled={submitting}
-        className="fab-sparkle"
-        title="Guardar Registro en Google Sheets"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-        </svg>
-      </button>
     </>
   );
 }
