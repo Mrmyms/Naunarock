@@ -158,16 +158,13 @@ export default function MatchScoutingPage() {
       {/* Header Web Móvil */}
       <div className="fintech-header" style={{ padding: '8px 4px 14px 4px' }}>
         <div className="user-profile-badge">
-          <div className="avatar-circle">
-            <span>4010</span>
-          </div>
-          <div>
-            <div style={{ fontSize: '11px', color: 'var(--nautilus-gray)', fontWeight: 500 }}>
-              Scouting Oficial • FTC BIOBUZZ
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--nautilus-white)', letterSpacing: '-0.2px' }}>
-              NAUTILUS 4010
-            </div>
+          <img
+            src="/brand/nautilus-logo.png"
+            alt="Logo Nautilus 4010"
+            style={{ width: '32px', height: '42px', objectFit: 'contain' }}
+          />
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--nautilus-white)', letterSpacing: '0.5px' }}>
+            NAUTILUS <span style={{ fontWeight: 500 }}>4010</span>
           </div>
         </div>
 
@@ -183,21 +180,6 @@ export default function MatchScoutingPage() {
             <polyline points="7 3 7 8 15 8" />
           </svg>
         </button>
-      </div>
-
-      {/* Hero Score Card */}
-      <div className="hero-balance-section">
-        <div className="hero-balance-label">Puntaje Neto Proyectado (EPA)</div>
-        <div className="hero-balance-amount">
-          <span>{netScore}</span>
-          <span style={{ fontSize: '20px', color: 'var(--nautilus-gold)', fontWeight: 700 }}>PTS</span>
-        </div>
-        <div className="hero-balance-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-          </svg>
-          <span>Match #{match} • Robot #{team}</span>
-        </div>
       </div>
 
       {/* Alianza & Match Info */}
