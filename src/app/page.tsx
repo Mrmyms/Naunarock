@@ -5,7 +5,7 @@ import BiobuzzFieldSelector, {
   BLUE_START_ZONES,
   RED_START_ZONES,
 } from '@/components/BiobuzzFieldSelector';
-import { useMatchPhase } from '@/context/MatchPhaseContext';
+import NautilusNavMenu from '@/components/NautilusNavMenu';
 
 type ScheduleTeam = {
   teamNumber: number;
@@ -130,7 +130,7 @@ export default function MatchScoutingPage() {
   const [match, setMatch] = useState(1);
   const [team, setTeam] = useState(4010);
   const [scouter, setScouter] = useState('');
-  const { currentTab, setCurrentTab } = useMatchPhase();
+  const [currentTab, setCurrentTab] = useState<'auto' | 'teleop' | 'endgame'>('auto');
 
   // Evento y Schedule (FTCScout)
   const [eventInfo, setEventInfo] = useState<EventInfo | null>(null);
@@ -410,16 +410,7 @@ export default function MatchScoutingPage() {
 
       {/* Header Web Móvil */}
       <div className="fintech-header" style={{ padding: '8px 4px 14px 4px' }}>
-        <div className="user-profile-badge">
-          <img
-            src="/brand/nautilus-logo.png"
-            alt="Logo Nautilus 4010"
-            style={{ width: '32px', height: '42px', objectFit: 'contain' }}
-          />
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--nautilus-white)', letterSpacing: '0.5px' }}>
-            NAUTILUS <span style={{ fontWeight: 500 }}>4010</span>
-          </div>
-        </div>
+        <NautilusNavMenu />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
@@ -1173,6 +1164,51 @@ export default function MatchScoutingPage() {
           </div>
         </div>
       )}
+      {/* Barra inferior de fases del Match: Autónomo / TeleOp / Endgame */}
+      <nav className="bottom-nav" aria-label="Fases del Match">
+        <button
+          type="button"
+          onClick={() => setCurrentTab('auto')}
+          className={`nav-link ${currentTab === 'auto' ? 'active' : ''}`}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="3" />
+            <circle cx="9" cy="10" r="1" fill="currentColor" />
+            <circle cx="15" cy="10" r="1" fill="currentColor" />
+            <path d="M9 15h6" />
+          </svg>
+          <span>Autónomo</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentTab('teleop')}
+          className={`nav-link ${currentTab === 'teleop' ? 'active' : ''}`}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="6" width="20" height="12" rx="3" />
+            <path d="M6 12h4m-2-2v4" />
+            <circle cx="17" cy="10" r="1" fill="currentColor" />
+            <circle cx="15" cy="14" r="1" fill="currentColor" />
+          </svg>
+          <span>TeleOp</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentTab('endgame')}
+          className={`nav-link ${currentTab === 'endgame' ? 'active' : ''}`}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+            <line x1="4" y1="22" x2="4" y2="15" />
+          </svg>
+          <span>Endgame</span>
+        </button>
+      </nav>
     </>
   );
 }
