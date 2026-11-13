@@ -74,6 +74,13 @@
   user-select: none;
 }
 
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background-color: var(--nautilus-navy);
   color: var(--nautilus-white);
@@ -99,7 +106,8 @@ body {
   flex-direction: column;
   position: relative;
   background: transparent;
-  padding: 16px 16px 110px 16px;
+  padding: 12px 14px 110px 14px;
+  overflow-x: hidden;
 }
 
 /* Status Bar Superior estilo iOS */
@@ -224,6 +232,7 @@ body {
 
 .dock-pill-btn {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,13 +240,14 @@ body {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 24px;
-  padding: 12px 14px;
-  font-size: 13px;
+  padding: 11px 10px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--nautilus-white);
   cursor: pointer;
   backdrop-filter: blur(14px);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
 }
 
 .dock-pill-btn:hover {
@@ -428,12 +438,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 12px 14px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 18px;
   backdrop-filter: blur(16px);
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .glass-list-item:hover {
@@ -444,7 +457,9 @@ body {
 .glass-list-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
 }
 
 .item-icon-box {
@@ -537,28 +552,121 @@ body {
   filter: drop-shadow(0 0 6px rgba(237, 184, 36, 0.6));
 }
 
-/* ================= CONTADORES (+ / -) COMPACTOS FINTECH ================= */
+/* ================= LISTA ABIERTA SIN CAJAS + CONTADORES LATERALES ================= */
+
+.open-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.open-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: opacity 0.15s ease;
+}
+
+.open-row:last-child {
+  border-bottom: none;
+}
+
+.counter-split-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.counter-split-row:last-child {
+  border-bottom: none;
+}
+
+.counter-big-btn {
+  width: 62px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--nautilus-white);
+  font-size: 26px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.counter-big-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.counter-big-btn:active {
+  transform: scale(0.92);
+}
+
+.counter-big-btn.gold {
+  background: var(--nautilus-gold);
+  color: #010124;
+  border: none;
+  box-shadow: 0 6px 18px rgba(237, 184, 36, 0.32);
+}
+
+.counter-big-btn.danger {
+  background: #EF4444;
+  color: #FFFFFF;
+  border: none;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3);
+}
+
+.counter-center-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.counter-center-value {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--nautilus-white);
+  letter-spacing: -0.5px;
+}
+
+/* ================= CONTADORES (+ / -) ERGONÓMICOS PARA MÓVIL ================= */
 
 .fintech-counter-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .fintech-btn-circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--nautilus-white);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .fintech-btn-circle:hover {
@@ -567,22 +675,102 @@ body {
 }
 
 .fintech-btn-circle:active {
-  transform: scale(0.9);
+  transform: scale(0.92);
 }
 
 .fintech-btn-circle.gold {
   background: var(--nautilus-gold);
   color: #010124;
   border: none;
-  box-shadow: 0 4px 12px rgba(237, 184, 36, 0.35);
+  box-shadow: 0 4px 14px rgba(237, 184, 36, 0.35);
 }
 
 .fintech-counter-num {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 800;
-  min-width: 24px;
+  min-width: 28px;
   text-align: center;
   color: var(--nautilus-white);
+}
+
+/* ================= CHIPS & INPUTS GLASSMORPHIC ================= */
+
+.btn-chip-duo {
+  min-height: 44px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  color: var(--nautilus-gray);
+  padding: 10px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-chip-duo:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: var(--nautilus-white);
+}
+
+.btn-chip-duo:active {
+  transform: scale(0.96);
+}
+
+.btn-chip-duo.selected {
+  background: rgba(237, 184, 36, 0.18);
+  border-color: var(--nautilus-gold);
+  color: var(--nautilus-gold);
+}
+
+.btn-chip-duo.selected-purple {
+  background: rgba(69, 31, 102, 0.5);
+  border-color: #A78BFA;
+  color: #EDE9FE;
+}
+
+.input-duo-box {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.2s ease;
+}
+
+.input-duo-box:focus-within {
+  border-color: var(--nautilus-gold);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.input-duo-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--nautilus-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.input-duo-field {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--nautilus-white);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  width: 100%;
+  min-height: 28px;
 }
 
 /* ================= TOAST ================= */
