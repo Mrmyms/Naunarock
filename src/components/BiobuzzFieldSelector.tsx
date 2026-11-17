@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 
 export interface StartZone {
-  id: string;
+  id: 'A' | 'B' | 'C' | 'D' | 'E';
   code: string;
   label: string;
   x: number;
@@ -13,19 +13,19 @@ export interface StartZone {
 }
 
 export const RED_START_ZONES: StartZone[] = [
-  { id: 'A6 · Esq. Sup.', code: 'A6', label: 'Esq. Sup.', x: 35, y: 23, w: 51, h: 49 },
-  { id: 'C6 · Centro Sup.', code: 'C6', label: 'Centro Sup.', x: 147, y: 23, w: 50, h: 47 },
-  { id: 'A2 · Pared Lat.', code: 'A2', label: 'Pared Lat.', x: 35, y: 222, w: 49, h: 74 },
-  { id: 'A1 · Garden', code: 'A1', label: 'Garden', x: 35, y: 299, w: 53, h: 48 },
-  { id: 'C1 · Audience', code: 'C1', label: 'Audience', x: 120, y: 304, w: 77, h: 49 },
+  { id: 'A', code: 'C1', label: 'Centro Audience', x: 120, y: 304, w: 77, h: 49 },
+  { id: 'B', code: 'A1', label: 'Garden', x: 35, y: 299, w: 53, h: 48 },
+  { id: 'C', code: 'A2', label: 'Pared Lat.', x: 35, y: 222, w: 49, h: 74 },
+  { id: 'D', code: 'A6', label: 'Esq. Sup.', x: 35, y: 23, w: 51, h: 49 },
+  { id: 'E', code: 'C6', label: 'Centro Sup.', x: 147, y: 23, w: 50, h: 47 },
 ];
 
 export const BLUE_START_ZONES: StartZone[] = [
-  { id: 'D6 · Centro Sup.', code: 'D6', label: 'Centro Sup.', x: 203, y: 23, w: 77, h: 47 },
-  { id: 'F6 · Garden', code: 'F6', label: 'Garden', x: 312, y: 24, w: 53, h: 48 },
-  { id: 'F5 · Pared Lat.', code: 'F5', label: 'Pared Lat.', x: 316, y: 78, w: 49, h: 74 },
-  { id: 'F1 · Esq. Inf.', code: 'F1', label: 'Esq. Inf.', x: 314, y: 304, w: 51, h: 49 },
-  { id: 'D1 · Audience', code: 'D1', label: 'Audience', x: 203, y: 304, w: 50, h: 49 },
+  { id: 'A', code: 'D6', label: 'Centro Sup.', x: 203, y: 23, w: 77, h: 47 },
+  { id: 'B', code: 'F6', label: 'Garden', x: 312, y: 24, w: 53, h: 48 },
+  { id: 'C', code: 'F5', label: 'Pared Lat.', x: 316, y: 78, w: 49, h: 74 },
+  { id: 'D', code: 'F1', label: 'Esq. Inf.', x: 314, y: 304, w: 51, h: 49 },
+  { id: 'E', code: 'D1', label: 'Centro Audience', x: 203, y: 304, w: 50, h: 49 },
 ];
 
 interface BiobuzzFieldSelectorProps {
@@ -72,7 +72,7 @@ export default function BiobuzzFieldSelector({
               color: selectedZone ? '#EDB824' : showMissing ? '#EF4444' : 'var(--nautilus-gray)',
             }}
           >
-            {selectedZone ? selectedZone.id : 'Toca una zona en el mapa'}
+            {selectedZone ? `Posición ${selectedZone.id} · ${selectedZone.label} (${selectedZone.code})` : 'Toca una zona (A–E) en el mapa'}
           </span>
         </div>
 
@@ -171,7 +171,7 @@ export default function BiobuzzFieldSelector({
             {/* Column Labels A-F */}
             {COLS.map((col, idx) => {
               const cx = 32 + idx * 56 + 28;
-              const cy = rotated ? 348 : 31;
+              const cy = rotated ? 364 : 11;
               return (
                 <text
                   key={col}
@@ -384,7 +384,7 @@ export default function BiobuzzFieldSelector({
                   style={{ cursor: 'pointer' }}
                   role="button"
                   tabIndex={0}
-                  aria-label={`Seleccionar posición inicial ${zone.id}`}
+                  aria-label={`Seleccionar posición inicial ${zone.id} (${zone.label})`}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
@@ -406,15 +406,15 @@ export default function BiobuzzFieldSelector({
                   <g transform={uprightText(cx, cy)}>
                     <text
                       x={cx}
-                      y={isSelected ? cy - 5 : cy}
+                      y={isSelected ? cy - 6 : cy}
                       textAnchor="middle"
                       dominantBaseline="central"
                       fill={isSelected ? '#EDB824' : '#FFFFFF'}
-                      fontSize="11"
+                      fontSize="13"
                       fontWeight="900"
                       fontFamily="var(--font-telemetry)"
                     >
-                      {zone.code}
+                      {zone.id}
                     </text>
                     {isSelected && (
                       <text
