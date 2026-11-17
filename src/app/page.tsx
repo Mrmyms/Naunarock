@@ -107,8 +107,8 @@ function ToggleRow({
       <div
         style={{
           minWidth: '82px',
-          padding: '10px 14px',
-          borderRadius: '14px',
+          padding: '9px 14px',
+          borderRadius: '6px',
           textAlign: 'center',
           fontSize: '12px',
           fontWeight: 800,
@@ -460,7 +460,7 @@ export default function MatchScoutingPage() {
             color: alliance === 'blue' ? '#93C5FD' : 'var(--nautilus-gray)',
           }}
         >
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6' }}></span>
+          <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#3B82F6' }}></span>
           <span>Alianza Azul</span>
         </button>
 
@@ -470,8 +470,8 @@ export default function MatchScoutingPage() {
             alignItems: 'center',
             gap: '6px',
             background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            borderRadius: '8px',
             padding: '4px 12px',
           }}
         >
@@ -502,7 +502,7 @@ export default function MatchScoutingPage() {
             color: alliance === 'red' ? '#FCA5A5' : 'var(--nautilus-gray)',
           }}
         >
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EF4444' }}></span>
+          <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#EF4444' }}></span>
           <span>Alianza Roja</span>
         </button>
       </div>
@@ -517,8 +517,8 @@ export default function MatchScoutingPage() {
                 display: 'flex',
                 alignItems: 'center',
                 background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '8px',
                 padding: '4px 12px',
                 gap: '4px',
               }}
@@ -551,7 +551,7 @@ export default function MatchScoutingPage() {
                     background: team === t ? 'rgba(237, 184, 36, 0.15)' : 'rgba(255, 255, 255, 0.03)',
                     border: `1px solid ${team === t ? 'var(--nautilus-gold)' : 'rgba(255, 255, 255, 0.08)'}`,
                     color: team === t ? 'var(--nautilus-gold)' : 'var(--nautilus-gray)',
-                    borderRadius: '12px',
+                    borderRadius: '6px',
                     padding: '4px 8px',
                     fontSize: '11px',
                     fontWeight: 700,
@@ -603,7 +603,7 @@ export default function MatchScoutingPage() {
                           : 'var(--alliance-red-border)'
                         : 'rgba(255, 255, 255, 0.08)'
                     }`,
-                    borderRadius: '12px',
+                    borderRadius: '6px',
                     padding: '6px 4px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -878,8 +878,8 @@ export default function MatchScoutingPage() {
                 onChange={(e) => setTacticalNotes(e.target.value)}
                 style={{
                   background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '14px',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '8px',
                   padding: '12px 14px',
                   color: '#FFFFFF',
                   fontFamily: 'inherit',
@@ -901,8 +901,7 @@ export default function MatchScoutingPage() {
                 color: '#010124',
                 fontWeight: 800,
                 fontSize: '15px',
-                padding: '16px 20px',
-                boxShadow: '0 8px 24px rgba(237, 184, 36, 0.35)',
+                padding: '15px 20px',
                 opacity: submitting ? 0.6 : 1,
               }}
             >
@@ -918,9 +917,7 @@ export default function MatchScoutingPage() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(1, 1, 20, 0.78)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
+            background: 'rgba(1, 1, 20, 0.84)',
             zIndex: 250,
             display: 'flex',
             alignItems: 'center',
@@ -934,14 +931,14 @@ export default function MatchScoutingPage() {
             style={{
               width: '100%',
               maxWidth: '420px',
-              background: 'linear-gradient(180deg, rgba(22, 14, 48, 0.96) 0%, rgba(5, 5, 32, 0.98) 100%)',
-              border: '1px solid rgba(255, 255, 255, 0.14)',
-              borderRadius: '26px',
+              background: '#07072B',
+              border: '1px solid rgba(255, 255, 255, 0.16)',
+              borderRadius: '10px',
               padding: '20px',
               display: 'flex',
               flexDirection: 'column',
               gap: '14px',
-              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85)',
+              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.75)',
               maxHeight: '85vh',
               overflowY: 'auto',
             }}
@@ -969,7 +966,7 @@ export default function MatchScoutingPage() {
                 style={{
                   background: 'rgba(237, 184, 36, 0.1)',
                   border: '1px solid rgba(237, 184, 36, 0.35)',
-                  borderRadius: '16px',
+                  borderRadius: '8px',
                   padding: '10px 14px',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -992,7 +989,7 @@ export default function MatchScoutingPage() {
                     background: 'rgba(239, 68, 68, 0.18)',
                     border: '1px solid rgba(248, 113, 113, 0.4)',
                     color: '#FCA5A5',
-                    borderRadius: '12px',
+                    borderRadius: '6px',
                     padding: '6px 10px',
                     fontSize: '11px',
                     fontWeight: 700,
@@ -1035,7 +1032,7 @@ export default function MatchScoutingPage() {
                         lockedStation === st.id ? 'var(--nautilus-gold)' : 'rgba(255, 255, 255, 0.08)'
                       }`,
                       color: lockedStation === st.id ? '#FFFFFF' : 'var(--nautilus-gray)',
-                      borderRadius: '10px',
+                      borderRadius: '6px',
                       padding: '8px 4px',
                       fontSize: '10px',
                       fontWeight: 700,
@@ -1060,7 +1057,7 @@ export default function MatchScoutingPage() {
                       background: searchSeason === yr ? 'rgba(237, 184, 36, 0.18)' : 'rgba(255, 255, 255, 0.04)',
                       border: `1px solid ${searchSeason === yr ? 'var(--nautilus-gold)' : 'rgba(255, 255, 255, 0.08)'}`,
                       color: searchSeason === yr ? 'var(--nautilus-gold)' : 'var(--nautilus-gray)',
-                      borderRadius: '12px',
+                      borderRadius: '6px',
                       padding: '8px',
                       fontSize: '12px',
                       fontWeight: 800,
@@ -1085,7 +1082,7 @@ export default function MatchScoutingPage() {
                     flex: 1,
                     background: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '14px',
+                    borderRadius: '6px',
                     padding: '10px 12px',
                     color: '#FFFFFF',
                     fontSize: '13px',
@@ -1116,7 +1113,7 @@ export default function MatchScoutingPage() {
                   style={{
                     background: 'rgba(255, 255, 255, 0.04)',
                     border: '1px dashed rgba(237, 184, 36, 0.4)',
-                    borderRadius: '12px',
+                    borderRadius: '6px',
                     padding: '8px',
                     color: 'var(--nautilus-gold)',
                     fontSize: '11px',
@@ -1141,7 +1138,7 @@ export default function MatchScoutingPage() {
                       textAlign: 'left',
                       background: 'rgba(255, 255, 255, 0.04)',
                       border: '1px solid rgba(255, 255, 255, 0.08)',
-                      borderRadius: '14px',
+                      borderRadius: '6px',
                       padding: '10px 12px',
                       cursor: 'pointer',
                       display: 'flex',

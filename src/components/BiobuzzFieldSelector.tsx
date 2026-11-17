@@ -74,8 +74,8 @@ export default function BiobuzzFieldSelector({
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '8px 12px',
-            borderRadius: '12px',
+            padding: '7px 10px',
+            borderRadius: '6px',
             background: rotated ? 'rgba(237, 184, 36, 0.16)' : 'rgba(255, 255, 255, 0.05)',
             border: `1px solid ${rotated ? 'var(--nautilus-gold)' : 'rgba(255, 255, 255, 0.14)'}`,
             color: rotated ? 'var(--nautilus-gold)' : 'var(--nautilus-gray)',
@@ -100,10 +100,10 @@ export default function BiobuzzFieldSelector({
           width: '100%',
           maxWidth: '340px',
           margin: '0 auto',
-          borderRadius: '18px',
+          borderRadius: '8px',
           padding: '8px',
-          background: 'rgba(1, 1, 36, 0.55)',
-          border: '1px solid rgba(255, 255, 255, 0.09)',
+          background: '#050524',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
         }}
       >
         <svg

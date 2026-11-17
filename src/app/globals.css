@@ -90,10 +90,6 @@ body {
   padding: 0;
   display: flex;
   justify-content: center;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(69, 31, 102, 0.45) 0%, rgba(1, 1, 36, 0.95) 60%),
-    radial-gradient(circle at 100% 100%, rgba(237, 184, 36, 0.06) 0%, transparent 40%);
-  background-attachment: fixed;
 }
 
 /* ================= CONTENEDOR WEB RESPONSIVE PARA MÓVIL (PWA / WEB APP REAL) ================= */
@@ -160,15 +156,15 @@ body {
 .header-action-icon {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: var(--nautilus-white);
-  transition: all 0.2s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .header-action-icon:hover {
@@ -237,16 +233,15 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 24px;
-  padding: 11px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 10px;
   font-size: 12px;
   font-weight: 700;
   color: var(--nautilus-white);
   cursor: pointer;
-  backdrop-filter: blur(14px);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
 }
 
@@ -510,13 +505,11 @@ body {
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  background: rgba(7, 4, 24, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #060628;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  padding: 10px 18px 24px 18px;
+  padding: 8px 16px 20px 16px;
   z-index: 100;
 }
 
@@ -528,11 +521,11 @@ body {
   gap: 4px;
   color: var(--nautilus-gray);
   text-decoration: none;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   padding: 8px;
-  border-radius: 16px;
-  transition: all 0.2s ease;
+  border-radius: 8px;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .nav-link svg {
@@ -588,8 +581,8 @@ body {
 
 .counter-big-btn {
   width: 62px;
-  height: 56px;
-  border-radius: 18px;
+  height: 54px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: var(--nautilus-white);
@@ -600,7 +593,7 @@ body {
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .counter-big-btn:hover {
@@ -609,21 +602,19 @@ body {
 }
 
 .counter-big-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.95);
 }
 
 .counter-big-btn.gold {
   background: var(--nautilus-gold);
   color: #010124;
-  border: none;
-  box-shadow: 0 6px 18px rgba(237, 184, 36, 0.32);
+  border: 1px solid var(--nautilus-gold);
 }
 
 .counter-big-btn.danger {
   background: #EF4444;
   color: #FFFFFF;
-  border: none;
-  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3);
+  border: 1px solid #EF4444;
 }
 
 .counter-center-info {
@@ -697,9 +688,9 @@ body {
 
 .btn-chip-duo {
   min-height: 44px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
+  border-radius: 6px;
   color: var(--nautilus-gray);
   padding: 10px 10px;
   font-family: inherit;
@@ -711,7 +702,7 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn-chip-duo:hover {
@@ -777,21 +768,20 @@ body {
 
 .toast {
   position: fixed;
-  top: 36px;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%) translateY(-120px);
-  background: rgba(14, 10, 36, 0.92);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(237, 184, 36, 0.4);
+  background: #0B0B2E;
+  border: 1px solid var(--nautilus-gold);
   color: var(--nautilus-white);
-  padding: 12px 24px;
-  border-radius: 9999px;
+  padding: 10px 18px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.4px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(237, 184, 36, 0.3);
+  letter-spacing: 0.3px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
   z-index: 300;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
