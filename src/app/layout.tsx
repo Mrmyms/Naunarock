@@ -1,14 +1,6 @@
 import type { Metadata } from 'next';
-import { JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import BottomNav from '@/components/BottomNav';
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['500', '700', '800'],
-  variable: '--font-mono',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'NAUTILUS 4010 • Building a Legacy | Scouting FTC',
@@ -21,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={jetbrainsMono.variable}>
+    <html lang="es">
       <head>
         <link
           rel="preload"
