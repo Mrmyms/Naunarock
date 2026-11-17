@@ -38,10 +38,18 @@ export default function DashboardPage() {
     }
     teamStats[t].count += 1;
 
-    const autoBalancin = Number(m['Auto Balancín Polen'] || 0) + Number(m['Auto Balancín Néctar'] || 0);
-    const autoFlor = Number(m['Auto Flor Polen'] || 0) + Number(m['Auto Flor Néctar'] || 0);
-    const teleBalancin = Number(m['TeleOp Balancín Polen'] || 0) + Number(m['TeleOp Balancín Néctar'] || 0);
-    const teleFlor = Number(m['TeleOp Flor Polen'] || 0) + Number(m['TeleOp Flor Néctar'] || 0);
+    const autoBalancin =
+      Number(m['AUTO HIVE POLLEN'] ?? m['Auto Balancín Polen'] ?? 0) +
+      Number(m['AUTO HIVE NÉCTAR'] ?? m['Auto Balancín Néctar'] ?? 0);
+    const autoFlor =
+      Number(m['AUTO FLOR POLLEN'] ?? m['Auto Flor Polen'] ?? 0) +
+      Number(m['AUTO FLOR NÉCTAR'] ?? m['Auto Flor Néctar'] ?? 0);
+    const teleBalancin =
+      Number(m['TELE HIVE POLLEN'] ?? m['TeleOp Balancín Polen'] ?? 0) +
+      Number(m['TELE HIVE NÉCTAR'] ?? m['TeleOp Balancín Néctar'] ?? 0);
+    const teleFlor =
+      Number(m['TELE FLOR POLLEN'] ?? m['TeleOp Flor Polen'] ?? 0) +
+      Number(m['TELE FLOR NÉCTAR'] ?? m['TeleOp Flor Néctar'] ?? 0);
 
     const autoScore = Number(m['Auto Pts'] ?? 0);
     const teleScore = Number(m['TeleOp Pts'] ?? 0);

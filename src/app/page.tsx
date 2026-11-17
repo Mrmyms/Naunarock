@@ -771,7 +771,7 @@ export default function MatchScoutingPage() {
             </div>
 
             <CounterRow
-              title="Polen en Balancín (Hive)"
+              title="POLLEN en Balancín (Hive)"
               value={autoHivePollen}
               onDecrement={() => setAutoHivePollen(Math.max(0, autoHivePollen - 1))}
               onIncrement={() => setAutoHivePollen(autoHivePollen + 1)}
@@ -785,7 +785,7 @@ export default function MatchScoutingPage() {
             />
 
             <CounterRow
-              title="Polen en Flor (Flower)"
+              title="POLLEN en Flor (Flower)"
               value={autoFlowerPollen}
               onDecrement={() => setAutoFlowerPollen(Math.max(0, autoFlowerPollen - 1))}
               onIncrement={() => setAutoFlowerPollen(autoFlowerPollen + 1)}
@@ -820,7 +820,7 @@ export default function MatchScoutingPage() {
         {currentTab === 'teleop' && (
           <div className="open-list">
             <CounterRow
-              title="Polen en Balancín (Hive)"
+              title="POLLEN en Balancín (Hive)"
               value={teleopHivePollen}
               onDecrement={() => setTeleopHivePollen(Math.max(0, teleopHivePollen - 1))}
               onIncrement={() => setTeleopHivePollen(teleopHivePollen + 1)}
@@ -866,7 +866,7 @@ export default function MatchScoutingPage() {
             </div>
 
             <CounterRow
-              title="Polen en Flor (Flower)"
+              title="POLLEN en Flor (Flower)"
               value={flowerPollen}
               onDecrement={() => setFlowerPollen(Math.max(0, flowerPollen - 1))}
               onIncrement={() => setFlowerPollen(flowerPollen + 1)}
