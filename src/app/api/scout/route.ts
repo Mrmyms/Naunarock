@@ -27,7 +27,12 @@ export async function POST(request: Request) {
       Number(data.autoFlowerNectar ?? 0),       // L: Auto Flor Néctar
       Number(data.teleopHivePollen ?? 0),       // M: TeleOp Balancín Polen
       Number(data.teleopHiveNectar ?? 0),       // N: TeleOp Balancín Néctar
-      data.flowerOwner || data.flowerOwnership || 'No compitió', // O: Propiedad Flor
+      (() => {
+        const raw = data.flowerOwner ?? data.flowerOwnership;
+        if (raw === '' || raw === null || raw === undefined) return 0;
+        const n = Number(raw);
+        return Number.isFinite(n) ? Math.max(0, Math.min(4, Math.round(n))) : String(raw);
+      })(),                                                                 // O: Propiedad Flor (0-4)
       Number(data.flowerPollen ?? 0),           // P: TeleOp Flor Polen
       Number(data.flowerNectar ?? 0),           // Q: TeleOp Flor Néctar
       data.bottomNectar ? 'SI' : 'NO',          // R: Bottom Nectar

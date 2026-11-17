@@ -181,7 +181,7 @@ export default function MatchScoutingPage() {
   const [flowerPollen, setFlowerPollen] = useState(0);
   const [flowerNectar, setFlowerNectar] = useState(0);
   const [bottomNectar, setBottomNectar] = useState(false);
-  const [flowerOwnership, setFlowerOwnership] = useState<'Controló Flor' | 'Perdió Control' | 'No compitió' | ''>('');
+  const [flowerOwnership, setFlowerOwnership] = useState<number | null>(null);
   const [gardenElements, setGardenElements] = useState(0);
   const [gardenDescore, setGardenDescore] = useState(false);
 
@@ -206,7 +206,7 @@ export default function MatchScoutingPage() {
     if (!match || match < 1) items.push({ key: 'match', label: 'Match #' });
     if (!team || team < 1) items.push({ key: 'team', label: 'Robot #' });
     if (!startPos) items.push({ key: 'startPos', label: 'Posición de inicio', tab: 'auto' });
-    if (!flowerOwnership) items.push({ key: 'flowerOwnership', label: 'Propiedad de la flor', tab: 'teleop' });
+    if (flowerOwnership === null) items.push({ key: 'flowerOwnership', label: 'Propiedad de la flor (0–4)', tab: 'teleop' });
     if (!robotStatus) items.push({ key: 'robotStatus', label: 'Estatus del robot', tab: 'endgame' });
     if (!cardStatus) items.push({ key: 'cardStatus', label: 'Tarjetas', tab: 'endgame' });
     if (driverSkill === null) items.push({ key: 'driverSkill', label: 'Piloto (1–5)', tab: 'endgame' });
@@ -222,7 +222,7 @@ export default function MatchScoutingPage() {
     (autoPark ? 5 : 0) +
     (autoHivePollen + autoHiveNectar + autoFlowerPollen + autoFlowerNectar) * 2;
 
-  const flowerMultiplier = flowerOwnership === 'Controló Flor' ? 2 : 0;
+  const flowerMultiplier = (flowerOwnership ?? 0) > 0 ? 2 : 0;
   const teleScore =
     (teleopHivePollen + teleopHiveNectar) * 2 +
     (flowerPollen + flowerNectar) * flowerMultiplier +
@@ -377,7 +377,7 @@ export default function MatchScoutingPage() {
     setFlowerPollen(0);
     setFlowerNectar(0);
     setBottomNectar(false);
-    setFlowerOwnership('');
+    setFlowerOwnership(null);
     setGardenElements(0);
     setGardenDescore(false);
     setTeleopPark(false);
@@ -833,33 +833,35 @@ export default function MatchScoutingPage() {
               onIncrement={() => setTeleopHiveNectar(teleopHiveNectar + 1)}
             />
 
-            {/* Propiedad de la Flor */}
+            {/* Propiedad de la Flor (entero 0–4) */}
             <div
               className="open-row"
               style={{
                 flexDirection: 'column',
                 alignItems: 'stretch',
                 gap: '10px',
-                borderBottomColor: showValidation && !flowerOwnership ? '#EF4444' : undefined,
+                borderBottomColor: showValidation && flowerOwnership === null ? '#EF4444' : undefined,
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="item-main-text">Propiedad de la Flor</span>
-                <span style={{ fontSize: '11px', color: showValidation && !flowerOwnership ? '#EF4444' : 'var(--nautilus-gold)' }}>
-                  {showValidation && !flowerOwnership ? 'Requerido' : 'Néctar superior'}
+                <span className="item-main-text">Propiedad de Flor (Tapadas)</span>
+                <span style={{ fontSize: '11px', color: showValidation && flowerOwnership === null ? '#EF4444' : 'var(--nautilus-gold)' }}>
+                  {showValidation && flowerOwnership === null ? 'Requerido' : '0 = Ninguna • Néctar superior'}
                 </span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                {(['Controló Flor', 'Perdió Control', 'No compitió'] as const).map((own) => (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                {[0, 1, 2, 3, 4].map((count) => (
                   <button
-                    key={own}
-                    onClick={() => setFlowerOwnership(own)}
-                    className={`btn-chip-duo ${flowerOwnership === own ? 'selected' : ''}`}
+                    key={count}
+                    onClick={() => setFlowerOwnership(count)}
+                    className={`btn-chip-duo mono-tabular ${flowerOwnership === count ? 'selected' : ''}`}
                     style={{
-                      borderColor: flowerOwnership === own ? '#EDB824' : showValidation && !flowerOwnership ? '#EF4444' : undefined,
+                      fontWeight: 900,
+                      fontSize: '15px',
+                      borderColor: flowerOwnership === count ? '#EDB824' : showValidation && flowerOwnership === null ? '#EF4444' : undefined,
                     }}
                   >
-                    {own}
+                    {count}
                   </button>
                 ))}
               </div>
