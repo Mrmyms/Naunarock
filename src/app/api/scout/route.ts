@@ -7,37 +7,43 @@ export async function POST(request: Request) {
 
     const timestamp = new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey' });
 
+    const notesText = data.notes
+      ? `${data.notes} ${data.tags && data.tags.length ? '[' + data.tags.join(', ') + ']' : ''}`.trim()
+      : (data.tags && data.tags.length ? '[' + data.tags.join(', ') + ']' : '');
+
+    // Orden cronológico exacto coincidente con Captura_BIOBUZZ!A1:AE1 (31 columnas)
     const row = [
-      timestamp,
-      data.match || 0,
-      data.team || 0,
-      (data.alliance || 'AZUL').toUpperCase(),
-      data.scouter || 'Anónimo',
-      data.startPos || 'Pared Ext.',
-      data.autoLeave ? 'SI' : 'NO',
-      data.autoPark ? 'SI' : 'NO',
-      data.autoHivePollen ?? 0,
-      data.autoHiveNectar ?? 0,
-      data.teleopHivePollen ?? 0,
-      data.flowerPollen ?? 0,
-      data.flowerNectar ?? 0,
-      data.bottomNectar ? 'SI' : 'NO',
-      data.flowerOwner || 'No compitió',
-      data.gardenElements || 0,
-      data.gardenDescore ? 'SI' : 'NO',
-      data.teleopPark ? 'SI' : 'NO',
-      data.status || '100% Operativo',
-      data.minorFouls || 0,
-      data.majorFouls || 0,
-      data.driverRating || 3,
-      data.notes ? `${data.notes} ${data.tags && data.tags.length ? '[' + data.tags.join(', ') + ']' : ''}`.trim() : (data.tags && data.tags.length ? '[' + data.tags.join(', ') + ']' : ''),
-      data.autoScore || 0,
-      data.teleScore || 0,
-      data.foulsScore || 0,
-      data.netScore || 0,
-      data.autoFlowerPollen ?? 0,
-      data.autoFlowerNectar ?? 0,
-      data.teleopHiveNectar ?? 0,
+      timestamp,                                // A: Timestamp
+      Number(data.match) || 0,                  // B: Match #
+      Number(data.team) || 0,                   // C: Equipo #
+      (data.alliance || 'AZUL').toUpperCase(),  // D: Alianza
+      data.scouter || 'Scouter 4010',           // E: Scouter
+      data.startPos || 'Sin pos.',              // F: Posición Inicio
+      data.autoLeave ? 'SI' : 'NO',             // G: Auto Leave
+      data.autoPark ? 'SI' : 'NO',              // H: Auto Park
+      Number(data.autoHivePollen ?? 0),         // I: Auto Balancín Polen
+      Number(data.autoHiveNectar ?? 0),         // J: Auto Balancín Néctar
+      Number(data.autoFlowerPollen ?? 0),       // K: Auto Flor Polen
+      Number(data.autoFlowerNectar ?? 0),       // L: Auto Flor Néctar
+      Number(data.teleopHivePollen ?? 0),       // M: TeleOp Balancín Polen
+      Number(data.teleopHiveNectar ?? 0),       // N: TeleOp Balancín Néctar
+      data.flowerOwner || data.flowerOwnership || 'No compitió', // O: Propiedad Flor
+      Number(data.flowerPollen ?? 0),           // P: TeleOp Flor Polen
+      Number(data.flowerNectar ?? 0),           // Q: TeleOp Flor Néctar
+      data.bottomNectar ? 'SI' : 'NO',          // R: Bottom Nectar
+      Number(data.gardenElements ?? 0),         // S: Garden Piezas
+      data.gardenDescore ? 'SI' : 'NO',         // T: Defensa Garden
+      data.teleopPark ? 'SI' : 'NO',            // U: Endgame Park
+      data.status || '100% Operativo',          // V: Estatus Robot
+      Number(data.minorFouls ?? 0),             // W: Faltas Menores
+      Number(data.majorFouls ?? 0),             // X: Faltas Graves
+      data.cardStatus || 'Ninguna',             // Y: Tarjetas
+      Number(data.driverRating ?? data.driverSkill ?? 3), // Z: Piloto (1-5)
+      notesText,                                // AA: Notas
+      Number(data.autoScore ?? 0),              // AB: Auto Pts
+      Number(data.teleScore ?? 0),              // AC: TeleOp Pts
+      Number(data.foulsScore ?? 0),             // AD: Faltas Pts
+      Number(data.netScore ?? 0),               // AE: Puntos Netos
     ];
 
     const result = await appendScoutRow('Captura_BIOBUZZ', row);

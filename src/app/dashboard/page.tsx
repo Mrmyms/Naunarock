@@ -29,36 +29,28 @@ export default function DashboardPage() {
   }, []);
 
   // Aggregated team stats
-  const teamStats: Record<string, { team: number; count: number; totalNet: number; totalTips: number; totalFouls: number }> = {};
+  const teamStats: Record<string, { team: number; count: number; totalNet: number; totalBalancin: number; totalFlor: number; totalFouls: number }> = {};
   matches.forEach((m) => {
-    const t = m['EQUIPO'] || m['Equipo #'] || m.team;
+    const t = m['Equipo #'] || m['EQUIPO'] || m.team;
     if (!t) return;
     if (!teamStats[t]) {
-      teamStats[t] = { team: Number(t), count: 0, totalNet: 0, totalTips: 0, totalFouls: 0 };
+      teamStats[t] = { team: Number(t), count: 0, totalNet: 0, totalBalancin: 0, totalFlor: 0, totalFouls: 0 };
     }
     teamStats[t].count += 1;
-    
-    // Auto points
-    const autoLeave = m['AUTO LIVE'] === 'SI' ? 3 : 0;
-    const autoPark = m['AUTO PARK'] === 'SI' ? 5 : 0;
-    const autoHiveTips = Number(m['AUTO HIVE POLLEN'] || m['Auto Hive Tips'] || 0);
-    const autoPieces = Number(m['AUTO HIVE NECTAR'] || m['Auto Pieces'] || 0);
-    const autoScore = Number(m['Auto Pts'] || (autoLeave + autoPark + autoHiveTips * 20 + autoPieces * 2));
 
-    // TeleOp & Endgame points
-    const teleTips = Number(m['TeleOp Hive Tips'] || 0);
-    const flowerPollen = Number(m['AUTO FLOWER POLLEN'] || 0);
-    const flowerNectar = Number(m['AUTO FLOWER NECTAR'] || 0);
-    const bottomNectar = m['BOTTOM NECTAR'] === 'SI' ? 5 : 0;
-    const garden = Number(m['GARDEN CELL'] || 0);
-    const telePark = m['TELE PARK'] === 'SI' ? 5 : 0;
-    const teleScore = Number(m['TeleOp Pts'] || (teleTips * 20 + (flowerPollen + flowerNectar) * 2 + bottomNectar + garden + telePark));
+    const autoBalancin = Number(m['Auto Balancín Polen'] || 0) + Number(m['Auto Balancín Néctar'] || 0);
+    const autoFlor = Number(m['Auto Flor Polen'] || 0) + Number(m['Auto Flor Néctar'] || 0);
+    const teleBalancin = Number(m['TeleOp Balancín Polen'] || 0) + Number(m['TeleOp Balancín Néctar'] || 0);
+    const teleFlor = Number(m['TeleOp Flor Polen'] || 0) + Number(m['TeleOp Flor Néctar'] || 0);
 
-    const fouls = Number(m['Faltas Pts'] || 0);
-    const net = Number(m['Puntos Netos'] || (autoScore + teleScore - fouls));
+    const autoScore = Number(m['Auto Pts'] ?? 0);
+    const teleScore = Number(m['TeleOp Pts'] ?? 0);
+    const fouls = Number(m['Faltas Pts'] ?? 0);
+    const net = Number(m['Puntos Netos'] ?? (autoScore + teleScore - fouls));
 
     teamStats[t].totalNet += net;
-    teamStats[t].totalTips += autoHiveTips + teleTips;
+    teamStats[t].totalBalancin += autoBalancin + teleBalancin;
+    teamStats[t].totalFlor += autoFlor + teleFlor;
     teamStats[t].totalFouls += fouls;
   });
 
@@ -165,14 +157,15 @@ export default function DashboardPage() {
                   <th style={{ padding: '12px 14px' }}>Pos</th>
                   <th style={{ padding: '12px 8px' }}>Equipo</th>
                   <th style={{ padding: '12px 8px' }}>PJ</th>
-                  <th style={{ padding: '12px 8px' }}>Avg Tips</th>
+                  <th style={{ padding: '12px 8px' }}>Bal/Flor</th>
                   <th style={{ padding: '12px 14px', textAlign: 'right' }}>EPA Prom</th>
                 </tr>
               </thead>
               <tbody>
                 {rankedTeams.map((team, idx) => {
                   const avgNet = (team.totalNet / team.count).toFixed(1);
-                  const avgTips = (team.totalTips / team.count).toFixed(1);
+                  const avgBal = (team.totalBalancin / team.count).toFixed(1);
+                  const avgFlor = (team.totalFlor / team.count).toFixed(1);
                   return (
                     <tr
                       key={team.team}
@@ -191,7 +184,7 @@ export default function DashboardPage() {
                         {team.count}
                       </td>
                       <td style={{ padding: '12px 8px', color: 'var(--nautilus-gold)', fontWeight: 800 }}>
-                        {avgTips}
+                        {avgBal} / {avgFlor}
                       </td>
                       <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 900, color: 'var(--nautilus-gold)' }}>
                         {avgNet}

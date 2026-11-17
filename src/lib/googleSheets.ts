@@ -56,7 +56,7 @@ export async function appendScoutRow(sheetName: string, rowValues: any[]) {
 
   const response = await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: `${sheetName}!A:AD`,
+    range: `${sheetName}!A1`,
     valueInputOption: 'USER_ENTERED',
     insertDataOption: 'INSERT_ROWS',
     requestBody: {
@@ -67,7 +67,7 @@ export async function appendScoutRow(sheetName: string, rowValues: any[]) {
   return response.data;
 }
 
-export async function getSheetRows(sheetName: string, range = 'A1:AA1000') {
+export async function getSheetRows(sheetName: string, range = 'A1:AE1000') {
   const { sheets, sheetId } = getGoogleSheetsClient();
 
   const response = await sheets.spreadsheets.values.get({
