@@ -32,6 +32,7 @@ interface BiobuzzFieldSelectorProps {
   alliance: 'blue' | 'red';
   value: string;
   teamNumber?: number;
+  showMissing?: boolean;
   onChange: (pos: string) => void;
 }
 
@@ -42,6 +43,7 @@ export default function BiobuzzFieldSelector({
   alliance,
   value,
   teamNumber,
+  showMissing = false,
   onChange,
 }: BiobuzzFieldSelectorProps) {
   const [rotated, setRotated] = useState(false);
@@ -49,7 +51,7 @@ export default function BiobuzzFieldSelector({
   const zones = alliance === 'red' ? RED_START_ZONES : BLUE_START_ZONES;
   const allianceColor = alliance === 'red' ? '#EF4444' : '#3B82F6';
   const allianceGlow = alliance === 'red' ? 'rgba(239, 68, 68, 0.22)' : 'rgba(59, 130, 246, 0.22)';
-  const selectedZone = zones.find((z) => z.id === value) ?? zones[0];
+  const selectedZone = zones.find((z) => z.id === value) ?? null;
 
   // Center of field for 180deg rotation: field is x=[32..368] (cx=200), y=[20..356] (cy=188)
   const fieldTransform = rotated ? 'rotate(180 200 188)' : undefined;
@@ -62,8 +64,15 @@ export default function BiobuzzFieldSelector({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <span className="item-main-text">Posición de Inicio</span>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--nautilus-gold)' }}>
-            {selectedZone.id}
+          <span
+            className="mono-tabular"
+            style={{
+              fontSize: '12px',
+              fontWeight: 700,
+              color: selectedZone ? '#EDB824' : showMissing ? '#EF4444' : 'var(--nautilus-gray)',
+            }}
+          >
+            {selectedZone ? selectedZone.id : 'Toca una zona en el mapa'}
           </span>
         </div>
 
@@ -75,10 +84,10 @@ export default function BiobuzzFieldSelector({
             alignItems: 'center',
             gap: '6px',
             padding: '7px 10px',
-            borderRadius: '6px',
-            background: rotated ? 'rgba(237, 184, 36, 0.16)' : 'rgba(255, 255, 255, 0.05)',
-            border: `1px solid ${rotated ? 'var(--nautilus-gold)' : 'rgba(255, 255, 255, 0.14)'}`,
-            color: rotated ? 'var(--nautilus-gold)' : 'var(--nautilus-gray)',
+            borderRadius: '4px',
+            background: rotated ? '#451F66' : '#070733',
+            border: rotated ? '2px solid #EDB824' : '1px solid #451F66',
+            color: rotated ? '#EDB824' : '#FFFFFF',
             fontSize: '11px',
             fontWeight: 700,
             cursor: 'pointer',
@@ -100,10 +109,10 @@ export default function BiobuzzFieldSelector({
           width: '100%',
           maxWidth: '340px',
           margin: '0 auto',
-          borderRadius: '8px',
+          borderRadius: '6px',
           padding: '8px',
-          background: '#050524',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          background: '#04042B',
+          border: showMissing && !selectedZone ? '2px solid #EF4444' : '1px solid #451F66',
         }}
       >
         <svg
@@ -113,21 +122,16 @@ export default function BiobuzzFieldSelector({
           role="img"
           aria-label="Mapa interactivo de cancha FTC BIOBUZZ 6 por 6"
         >
-          <defs>
-            <filter id="goldGlow" x="-25%" y="-25%" width="150%" height="150%">
-              <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#EDB824" floodOpacity="0.65" />
-            </filter>
-          </defs>
-
           {/* Top / Bottom Audience orientation label */}
           <text
             x="200"
             y={rotated ? 13 : 378}
             textAnchor="middle"
-            fill="rgba(255, 255, 255, 0.42)"
+            fill="rgba(255, 255, 255, 0.55)"
             fontSize="10"
             fontWeight="800"
             letterSpacing="2"
+            fontFamily="var(--font-telemetry)"
           >
             AUDIENCE
           </text>
@@ -140,13 +144,13 @@ export default function BiobuzzFieldSelector({
               y="20"
               width="336"
               height="336"
-              rx="6"
-              fill="#07072B"
-              stroke="rgba(255, 255, 255, 0.25)"
+              rx="4"
+              fill="#04042B"
+              stroke="#451F66"
               strokeWidth="2"
             />
 
-            {/* 6x6 Tile Checkerboard + Grid Seams */}
+            {/* 6x6 Tile Checkerboard + Purple Grid Seams (#451F66 at 60%) */}
             {ROWS.map((rowLabel, rIdx) =>
               COLS.map((colLabel, cIdx) => {
                 const tx = 32 + cIdx * 56;
@@ -159,9 +163,9 @@ export default function BiobuzzFieldSelector({
                     y={ty}
                     width="56"
                     height="56"
-                    fill={isAlt ? 'rgba(255, 255, 255, 0.025)' : 'rgba(255, 255, 255, 0.055)'}
-                    stroke="rgba(255, 255, 255, 0.08)"
-                    strokeWidth="0.8"
+                    fill={isAlt ? '#04042B' : '#070733'}
+                    stroke="rgba(69, 31, 102, 0.6)"
+                    strokeWidth="1"
                   />
                 );
               })
@@ -173,7 +177,7 @@ export default function BiobuzzFieldSelector({
               y1="20"
               x2="200"
               y2="356"
-              stroke="rgba(255, 255, 255, 0.22)"
+              stroke="rgba(255, 255, 255, 0.28)"
               strokeWidth="1.5"
               strokeDasharray="4 4"
             />
@@ -189,9 +193,10 @@ export default function BiobuzzFieldSelector({
                   y={cy}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  fill="rgba(255,255,255,0.22)"
+                  fill="rgba(255, 255, 255, 0.42)"
                   fontSize="9"
                   fontWeight="700"
+                  fontFamily="var(--font-telemetry)"
                   transform={uprightText(cx, cy)}
                 >
                   {col}
@@ -210,9 +215,10 @@ export default function BiobuzzFieldSelector({
                   y={cy}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  fill="rgba(255,255,255,0.32)"
+                  fill="rgba(255, 255, 255, 0.48)"
                   fontSize="9"
                   fontWeight="700"
+                  fontFamily="var(--font-telemetry)"
                   transform={uprightText(cx, cy)}
                 >
                   {row}
@@ -314,9 +320,9 @@ export default function BiobuzzFieldSelector({
                 y="140"
                 width="96"
                 height="96"
-                rx="8"
-                fill="rgba(255, 255, 255, 0.04)"
-                stroke="rgba(255, 255, 255, 0.24)"
+                rx="4"
+                fill="#070733"
+                stroke="#451F66"
                 strokeWidth="1.5"
               />
               {/* Red Hive Baskets (left) */}
@@ -325,7 +331,7 @@ export default function BiobuzzFieldSelector({
                 y="145"
                 width="39"
                 height="38"
-                rx="5"
+                rx="3"
                 fill="rgba(239, 68, 68, 0.16)"
                 stroke="#EF4444"
                 strokeWidth="1.6"
@@ -335,7 +341,7 @@ export default function BiobuzzFieldSelector({
                 y="193"
                 width="39"
                 height="38"
-                rx="5"
+                rx="3"
                 fill="rgba(239, 68, 68, 0.16)"
                 stroke="#EF4444"
                 strokeWidth="1.6"
@@ -346,7 +352,7 @@ export default function BiobuzzFieldSelector({
                 y="145"
                 width="39"
                 height="38"
-                rx="5"
+                rx="3"
                 fill="rgba(59, 130, 246, 0.16)"
                 stroke="#3B82F6"
                 strokeWidth="1.6"
@@ -356,13 +362,13 @@ export default function BiobuzzFieldSelector({
                 y="193"
                 width="39"
                 height="38"
-                rx="5"
+                rx="3"
                 fill="rgba(59, 130, 246, 0.16)"
                 stroke="#3B82F6"
                 strokeWidth="1.6"
               />
               {/* Center bar & label */}
-              <rect x="155" y="185" width="90" height="6" rx="2" fill="rgba(237, 184, 36, 0.35)" />
+              <rect x="155" y="185" width="90" height="6" rx="1" fill="#451F66" />
               <text
                 x="200"
                 y="188"
@@ -372,6 +378,7 @@ export default function BiobuzzFieldSelector({
                 fontSize="8"
                 fontWeight="900"
                 letterSpacing="1"
+                fontFamily="var(--font-telemetry)"
                 transform={uprightText(200, 188)}
               >
                 HIVES
@@ -380,7 +387,7 @@ export default function BiobuzzFieldSelector({
 
             {/* CLICKABLE VALID ROBOT STARTING ZONES FOR ACTIVE ALLIANCE */}
             {zones.map((zone) => {
-              const isSelected = selectedZone.id === zone.id;
+              const isSelected = selectedZone?.id === zone.id;
               const cx = zone.x + zone.w / 2;
               const cy = zone.y + zone.h / 2;
 
@@ -404,12 +411,11 @@ export default function BiobuzzFieldSelector({
                     y={zone.y}
                     width={zone.w}
                     height={zone.h}
-                    rx="7"
-                    fill={isSelected ? 'rgba(237, 184, 36, 0.28)' : allianceGlow}
+                    rx="4"
+                    fill={isSelected ? 'rgba(237, 184, 36, 0.16)' : allianceGlow}
                     stroke={isSelected ? '#EDB824' : allianceColor}
                     strokeWidth={isSelected ? 2.5 : 1.5}
                     strokeDasharray={isSelected ? undefined : '4 3'}
-                    filter={isSelected ? 'url(#goldGlow)' : undefined}
                   />
                   <g transform={uprightText(cx, cy)}>
                     <text
@@ -420,6 +426,7 @@ export default function BiobuzzFieldSelector({
                       fill={isSelected ? '#EDB824' : '#FFFFFF'}
                       fontSize="11"
                       fontWeight="900"
+                      fontFamily="var(--font-telemetry)"
                     >
                       {zone.code}
                     </text>
@@ -432,6 +439,7 @@ export default function BiobuzzFieldSelector({
                         fill="#FFFFFF"
                         fontSize="7.5"
                         fontWeight="800"
+                        fontFamily="var(--font-telemetry)"
                       >
                         {teamNumber ? `#${teamNumber}` : 'ROBOT'}
                       </text>

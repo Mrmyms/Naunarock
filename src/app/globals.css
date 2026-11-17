@@ -42,15 +42,17 @@
   --nautilus-gold: #EDB824;
   --nautilus-purple: #451F66;
   --nautilus-white: #FFFFFF;
-  --nautilus-gray: #8F95B2;
+  --nautilus-gray: #9CA3B8;
   --nautilus-gray-dark: #3F4460;
+  --font-telemetry: var(--font-mono), 'JetBrains Mono', 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Glassmorphic Surfaces - Reference Dribbble FinTech */
-  --surface-card: rgba(14, 14, 46, 0.65);
-  --surface-card-hover: rgba(22, 22, 64, 0.75);
-  --surface-inner: rgba(255, 255, 255, 0.04);
-  --surface-border: rgba(255, 255, 255, 0.08);
-  --surface-border-subtle: rgba(255, 255, 255, 0.04);
+  /* Superficies sólidas Telemetría Nautilus */
+  --surface-card: #070733;
+  --surface-card-hover: #0C0C42;
+  --surface-field: #04042B;
+  --surface-inner: #070733;
+  --surface-border: #451F66;
+  --surface-border-subtle: rgba(69, 31, 102, 0.6);
 
   /* Acentos de Alianza y Estado con look de micro-brillo */
   --alliance-blue: #3B82F6;
@@ -124,25 +126,33 @@ body {
   gap: 6px;
 }
 
+.mono-tabular {
+  font-family: var(--font-telemetry);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Top App Header con Avatar / Símbolo */
 .fintech-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 24px 16px 24px;
+  background: var(--nautilus-navy);
+  border-bottom: 2px solid var(--nautilus-purple);
+  padding: 8px 4px 12px 4px;
+  margin-bottom: 14px;
 }
 
 .user-profile-badge {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .avatar-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--nautilus-purple) 0%, var(--nautilus-navy) 100%);
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background: var(--nautilus-purple);
   border: 1.5px solid var(--nautilus-gold);
   display: flex;
   align-items: center;
@@ -150,15 +160,14 @@ body {
   color: var(--nautilus-gold);
   font-weight: 800;
   font-size: 14px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .header-action-icon {
   width: 38px;
   height: 38px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: var(--surface-card);
+  border: 1px solid var(--nautilus-purple);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,8 +177,8 @@ body {
 }
 
 .header-action-icon:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--nautilus-purple);
+  border-color: var(--nautilus-gold);
 }
 
 /* ================= BALANCE / PUNTOS CARD HERO ================= */
@@ -233,9 +242,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  background: var(--surface-card);
+  border: 1px solid var(--nautilus-purple);
+  border-radius: 4px;
   padding: 10px 10px;
   font-size: 12px;
   font-weight: 700;
@@ -246,8 +255,8 @@ body {
 }
 
 .dock-pill-btn:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--surface-card-hover);
+  border-color: var(--nautilus-gold);
 }
 
 .dock-pill-btn:active {
@@ -289,20 +298,18 @@ body {
 }
 
 .fintech-kpi-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 22px;
+  background: var(--surface-card);
+  border: 1px solid var(--nautilus-purple);
+  border-radius: 6px;
   padding: 16px 16px 14px 16px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 10px 30px rgba(0, 0, 10, 0.4);
   position: relative;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .fintech-kpi-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.055);
+  border-color: var(--nautilus-gold);
+  background: var(--surface-card-hover);
 }
 
 .fintech-kpi-header {
@@ -435,18 +442,17 @@ body {
   justify-content: space-between;
   gap: 10px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 18px;
-  backdrop-filter: blur(16px);
-  transition: all 0.2s ease;
+  background: var(--surface-card);
+  border: 1px solid var(--nautilus-purple);
+  border-radius: 6px;
+  transition: border-color 0.15s ease, background 0.15s ease;
   width: 100%;
   box-sizing: border-box;
 }
 
 .glass-list-item:hover {
-  background: rgba(255, 255, 255, 0.055);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--surface-card-hover);
+  border-color: var(--nautilus-gold);
 }
 
 .glass-list-left {
@@ -458,11 +464,11 @@ body {
 }
 
 .item-icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 38px;
+  height: 38px;
+  border-radius: 4px;
+  background: var(--nautilus-navy);
+  border: 1px solid var(--nautilus-purple);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -505,11 +511,11 @@ body {
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  background: #060628;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--nautilus-navy);
+  border-top: 1px solid var(--nautilus-purple);
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  padding: 8px 16px 20px 16px;
+  padding: 0 0 14px 0;
   z-index: 100;
 }
 
@@ -523,9 +529,13 @@ body {
   text-decoration: none;
   font-size: 11px;
   font-weight: 700;
-  padding: 8px;
-  border-radius: 8px;
-  transition: color 0.15s ease, background 0.15s ease;
+  padding: 10px 8px 8px 8px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  border-top: 3px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .nav-link svg {
@@ -533,19 +543,25 @@ body {
   height: 20px;
   stroke: var(--nautilus-gray);
   stroke-width: 2;
-  transition: stroke 0.2s ease;
+  transition: stroke 0.15s ease;
 }
 
-.nav-link.active, .nav-link:hover {
+.nav-link.active {
+  color: var(--nautilus-gold);
+  background: rgba(69, 31, 102, 0.4);
+  border-top: 3px solid var(--nautilus-gold);
+}
+
+.nav-link:hover {
   color: var(--nautilus-gold);
 }
 
 .nav-link.active svg, .nav-link:hover svg {
   stroke: var(--nautilus-gold);
-  filter: drop-shadow(0 0 6px rgba(237, 184, 36, 0.6));
+  filter: none;
 }
 
-/* ================= LISTA ABIERTA SIN CAJAS + CONTADORES LATERALES ================= */
+/* ================= LISTA ABIERTA + CONTADORES TELEMETRÍA ================= */
 
 .open-list {
   display: flex;
@@ -557,8 +573,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 13px 2px;
+  border-bottom: 1px solid rgba(69, 31, 102, 0.6);
   transition: opacity 0.15s ease;
 }
 
@@ -570,23 +586,35 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 10px;
+  padding: 13px 6px;
+  border: 1px solid transparent;
+  border-bottom: 1px solid rgba(69, 31, 102, 0.6);
+  border-radius: 4px;
+  transition: border-color 0.06s ease, background-color 0.08s ease;
+}
+
+.counter-split-row.counter-row-flash {
+  border-color: var(--nautilus-gold);
+  background-color: rgba(237, 184, 36, 0.1);
 }
 
 .counter-split-row:last-child {
-  border-bottom: none;
+  border-bottom-color: transparent;
+}
+
+.counter-split-row.counter-row-flash:last-child {
+  border-bottom-color: var(--nautilus-gold);
 }
 
 .counter-big-btn {
-  width: 62px;
-  height: 54px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  width: 52px;
+  height: 52px;
+  border-radius: 4px;
+  background: var(--nautilus-purple);
+  border: 1px solid #633291;
   color: var(--nautilus-white);
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -597,23 +625,29 @@ body {
 }
 
 .counter-big-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: #572882;
+  border-color: var(--nautilus-gold);
 }
 
 .counter-big-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
 .counter-big-btn.gold {
+  width: 78px;
   background: var(--nautilus-gold);
-  color: #010124;
+  color: var(--nautilus-navy);
   border: 1px solid var(--nautilus-gold);
 }
 
+.counter-big-btn.gold:hover {
+  background: #F4C438;
+}
+
 .counter-big-btn.danger {
+  width: 78px;
   background: #EF4444;
-  color: #FFFFFF;
+  color: var(--nautilus-white);
   border: 1px solid #EF4444;
 }
 
@@ -628,8 +662,10 @@ body {
 }
 
 .counter-center-value {
-  font-size: 28px;
-  font-weight: 900;
+  font-family: var(--font-telemetry);
+  font-variant-numeric: tabular-nums;
+  font-size: 30px;
+  font-weight: 800;
   line-height: 1.05;
   color: var(--nautilus-white);
   letter-spacing: -0.5px;
@@ -647,9 +683,9 @@ body {
 .fintech-btn-circle {
   width: 42px;
   height: 42px;
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: var(--nautilus-purple);
+  border: 1px solid #633291;
   color: var(--nautilus-white);
   font-size: 20px;
   font-weight: 700;
@@ -657,23 +693,22 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .fintech-btn-circle:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: #572882;
+  border-color: var(--nautilus-gold);
 }
 
 .fintech-btn-circle:active {
-  transform: scale(0.92);
+  transform: scale(0.95);
 }
 
 .fintech-btn-circle.gold {
   background: var(--nautilus-gold);
-  color: #010124;
-  border: none;
-  box-shadow: 0 4px 14px rgba(237, 184, 36, 0.35);
+  color: var(--nautilus-navy);
+  border: 1px solid var(--nautilus-gold);
 }
 
 .fintech-counter-num {
@@ -687,12 +722,12 @@ body {
 /* ================= CHIPS & INPUTS GLASSMORPHIC ================= */
 
 .btn-chip-duo {
-  min-height: 44px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
+  min-height: 42px;
+  background: var(--surface-card);
+  border: 1px solid var(--nautilus-purple);
+  border-radius: 4px;
   color: var(--nautilus-gray);
-  padding: 10px 10px;
+  padding: 9px 10px;
   font-family: inherit;
   font-size: 11px;
   font-weight: 700;
@@ -706,42 +741,41 @@ body {
 }
 
 .btn-chip-duo:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: var(--surface-card-hover);
+  border-color: var(--nautilus-gold);
   color: var(--nautilus-white);
 }
 
 .btn-chip-duo:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
 .btn-chip-duo.selected {
-  background: rgba(237, 184, 36, 0.18);
-  border-color: var(--nautilus-gold);
+  background: var(--surface-card);
+  border: 2px solid var(--nautilus-gold);
   color: var(--nautilus-gold);
 }
 
 .btn-chip-duo.selected-purple {
-  background: rgba(69, 31, 102, 0.5);
-  border-color: #A78BFA;
-  color: #EDE9FE;
+  background: var(--nautilus-purple);
+  border: 2px solid var(--nautilus-gold);
+  color: var(--nautilus-white);
 }
 
 .input-duo-box {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  padding: 12px 16px;
+  background: var(--surface-card);
+  border: 1px solid var(--nautilus-purple);
+  border-radius: 4px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.15s ease;
 }
 
 .input-duo-box:focus-within {
   border-color: var(--nautilus-gold);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-card);
 }
 
 .input-duo-label {
@@ -768,24 +802,39 @@ body {
 
 .toast {
   position: fixed;
-  top: 24px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%) translateY(-120px);
-  background: #0B0B2E;
-  border: 1px solid var(--nautilus-gold);
+  background: var(--surface-card);
+  border: 2px solid var(--nautilus-gold);
   color: var(--nautilus-white);
   padding: 10px 18px;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.3px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
   z-index: 300;
   transition: transform 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
   pointer-events: none;
+}
+
+@keyframes saveBadgePulse {
+  0% {
+    transform: scale(0.95);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.save-success-pulse {
+  animation: saveBadgePulse 0.45s ease-out 1;
 }
 
 .toast.show {

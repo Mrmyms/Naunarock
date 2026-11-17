@@ -84,11 +84,19 @@ export default function NautilusNavMenu() {
         <img
           src="/brand/nautilus-logo.png"
           alt="Logo Nautilus 4010"
-          style={{ width: '32px', height: '42px', objectFit: 'contain' }}
+          style={{ width: '26px', height: '34px', objectFit: 'contain', flexShrink: 0 }}
         />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--nautilus-white)', letterSpacing: '0.5px' }}>
-            NAUTILUS <span style={{ fontWeight: 500 }}>4010</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 'clamp(13px, 3.8vw, 17px)',
+              fontWeight: 700,
+              color: 'var(--nautilus-white)',
+              letterSpacing: '0.4px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            NAUTILUS <span style={{ fontWeight: 500 }} className="mono-tabular">4010</span>
           </div>
           <svg
             width="14"
@@ -114,17 +122,16 @@ export default function NautilusNavMenu() {
           role="menu"
           style={{
             position: 'absolute',
-            top: 'calc(100% + 8px)',
+            top: 'calc(100% + 10px)',
             left: 0,
             minWidth: '216px',
-            background: '#07072B',
-            border: '1px solid rgba(255, 255, 255, 0.16)',
-            borderRadius: '8px',
+            background: '#070733',
+            border: '2px solid #451F66',
+            borderRadius: '4px',
             padding: '6px',
             display: 'flex',
             flexDirection: 'column',
             gap: '4px',
-            boxShadow: '0 14px 32px rgba(0, 0, 0, 0.75)',
             zIndex: 300,
           }}
         >
@@ -141,11 +148,11 @@ export default function NautilusNavMenu() {
                   alignItems: 'center',
                   gap: '12px',
                   padding: '9px 10px',
-                  borderRadius: '6px',
+                  borderRadius: '4px',
                   textDecoration: 'none',
-                  background: isActive ? 'rgba(237, 184, 36, 0.16)' : 'transparent',
-                  border: `1px solid ${isActive ? 'rgba(237, 184, 36, 0.35)' : 'transparent'}`,
-                  color: isActive ? 'var(--nautilus-gold)' : 'var(--nautilus-white)',
+                  background: isActive ? 'rgba(69, 31, 102, 0.55)' : 'transparent',
+                  border: `1px solid ${isActive ? '#EDB824' : 'transparent'}`,
+                  color: isActive ? '#EDB824' : '#FFFFFF',
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isActive ? 1 : 0.75 }}>
