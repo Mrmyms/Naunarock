@@ -3,7 +3,7 @@ import { getSheetRows } from '@/lib/googleSheets';
 
 export async function GET() {
   try {
-    const rows = await getSheetRows('Captura_BIOBUZZ', 'A1:AA1000');
+    const rows = await getSheetRows('Captura_BIOBUZZ', 'A1:AD1000');
     if (rows.length === 0) {
       return NextResponse.json({ success: true, headers: [], matches: [] });
     }

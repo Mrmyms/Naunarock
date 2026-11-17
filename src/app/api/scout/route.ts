@@ -16,11 +16,11 @@ export async function POST(request: Request) {
       data.startPos || 'Pared Ext.',
       data.autoLeave ? 'SI' : 'NO',
       data.autoPark ? 'SI' : 'NO',
-      data.autoHiveTips || 0,
-      data.autoPieces || 0,
-      data.teleopHiveTips || 0,
-      data.flowerPollen || 0,
-      data.flowerNectar || 0,
+      data.autoHivePollen ?? 0,
+      data.autoHiveNectar ?? 0,
+      data.teleopHivePollen ?? 0,
+      data.flowerPollen ?? 0,
+      data.flowerNectar ?? 0,
       data.bottomNectar ? 'SI' : 'NO',
       data.flowerOwner || 'No compitió',
       data.gardenElements || 0,
@@ -35,6 +35,9 @@ export async function POST(request: Request) {
       data.teleScore || 0,
       data.foulsScore || 0,
       data.netScore || 0,
+      data.autoFlowerPollen ?? 0,
+      data.autoFlowerNectar ?? 0,
+      data.teleopHiveNectar ?? 0,
     ];
 
     const result = await appendScoutRow('Captura_BIOBUZZ', row);

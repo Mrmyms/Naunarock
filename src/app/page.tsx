@@ -170,12 +170,14 @@ export default function MatchScoutingPage() {
   const [startPos, setStartPos] = useState<string>('');
   const [autoLeave, setAutoLeave] = useState(false);
   const [autoPark, setAutoPark] = useState(false);
-  const [autoHiveTips, setAutoHiveTips] = useState(0);
-  const [autoPollen, setAutoPollen] = useState(0);
-  const [autoNectar, setAutoNectar] = useState(0);
+  const [autoHivePollen, setAutoHivePollen] = useState(0);
+  const [autoHiveNectar, setAutoHiveNectar] = useState(0);
+  const [autoFlowerPollen, setAutoFlowerPollen] = useState(0);
+  const [autoFlowerNectar, setAutoFlowerNectar] = useState(0);
 
   // TELEOP (2m)
-  const [teleopHiveTips, setTeleopHiveTips] = useState(0);
+  const [teleopHivePollen, setTeleopHivePollen] = useState(0);
+  const [teleopHiveNectar, setTeleopHiveNectar] = useState(0);
   const [flowerPollen, setFlowerPollen] = useState(0);
   const [flowerNectar, setFlowerNectar] = useState(0);
   const [bottomNectar, setBottomNectar] = useState(false);
@@ -218,12 +220,11 @@ export default function MatchScoutingPage() {
   const autoScore =
     (autoLeave ? 3 : 0) +
     (autoPark ? 5 : 0) +
-    autoHiveTips * 20 +
-    (autoPollen + autoNectar) * 2;
+    (autoHivePollen + autoHiveNectar + autoFlowerPollen + autoFlowerNectar) * 2;
 
   const flowerMultiplier = flowerOwnership === 'Controló Flor' ? 2 : 0;
   const teleScore =
-    teleopHiveTips * 20 +
+    (teleopHivePollen + teleopHiveNectar) * 2 +
     (flowerPollen + flowerNectar) * flowerMultiplier +
     (bottomNectar ? 5 : 0) +
     gardenElements * 1 +
@@ -367,10 +368,12 @@ export default function MatchScoutingPage() {
     setStartPos('');
     setAutoLeave(false);
     setAutoPark(false);
-    setAutoHiveTips(0);
-    setAutoPollen(0);
-    setAutoNectar(0);
-    setTeleopHiveTips(0);
+    setAutoHivePollen(0);
+    setAutoHiveNectar(0);
+    setAutoFlowerPollen(0);
+    setAutoFlowerNectar(0);
+    setTeleopHivePollen(0);
+    setTeleopHiveNectar(0);
     setFlowerPollen(0);
     setFlowerNectar(0);
     setBottomNectar(false);
@@ -424,11 +427,12 @@ export default function MatchScoutingPage() {
         startPos,
         autoLeave,
         autoPark,
-        autoHiveTips,
-        autoPollen,
-        autoNectar,
-        autoPieces: autoPollen + autoNectar,
-        teleopHiveTips,
+        autoHivePollen,
+        autoHiveNectar,
+        autoFlowerPollen,
+        autoFlowerNectar,
+        teleopHivePollen,
+        teleopHiveNectar,
         flowerPollen,
         flowerNectar,
         bottomNectar,
@@ -514,24 +518,6 @@ export default function MatchScoutingPage() {
             </svg>
             <span>{eventInfo ? eventInfo.code : 'Evento'}</span>
           </button>
-
-          {/* Indicador de puntuación en vivo */}
-          <div
-            className="mono-tabular"
-            aria-label="Puntuación parcial en vivo"
-            style={{
-              background: '#070733',
-              border: '1px solid #451F66',
-              borderRadius: '4px',
-              padding: '6px 7px',
-              fontSize: '11px',
-              fontWeight: 800,
-              color: '#EDB824',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {netScore} PTS
-          </div>
 
           {saveState === 'saved' ? (
             <div
@@ -785,19 +771,31 @@ export default function MatchScoutingPage() {
             </div>
 
             <CounterRow
-              title="Auto Hive Tips"
-              subtitle="Panales volteados en auto"
-              value={autoHiveTips}
-              onDecrement={() => setAutoHiveTips(Math.max(0, autoHiveTips - 1))}
-              onIncrement={() => setAutoHiveTips(autoHiveTips + 1)}
+              title="Polen en Balancín (Hive)"
+              value={autoHivePollen}
+              onDecrement={() => setAutoHivePollen(Math.max(0, autoHivePollen - 1))}
+              onIncrement={() => setAutoHivePollen(autoHivePollen + 1)}
             />
 
             <CounterRow
-              title="Piezas en Auto"
-              subtitle="Polen o Néctar colocado"
-              value={autoPollen}
-              onDecrement={() => setAutoPollen(Math.max(0, autoPollen - 1))}
-              onIncrement={() => setAutoPollen(autoPollen + 1)}
+              title="Néctar en Balancín (Hive)"
+              value={autoHiveNectar}
+              onDecrement={() => setAutoHiveNectar(Math.max(0, autoHiveNectar - 1))}
+              onIncrement={() => setAutoHiveNectar(autoHiveNectar + 1)}
+            />
+
+            <CounterRow
+              title="Polen en Flor (Flower)"
+              value={autoFlowerPollen}
+              onDecrement={() => setAutoFlowerPollen(Math.max(0, autoFlowerPollen - 1))}
+              onIncrement={() => setAutoFlowerPollen(autoFlowerPollen + 1)}
+            />
+
+            <CounterRow
+              title="Néctar en Flor (Flower)"
+              value={autoFlowerNectar}
+              onDecrement={() => setAutoFlowerNectar(Math.max(0, autoFlowerNectar - 1))}
+              onIncrement={() => setAutoFlowerNectar(autoFlowerNectar + 1)}
             />
 
             <ToggleRow
@@ -822,11 +820,17 @@ export default function MatchScoutingPage() {
         {currentTab === 'teleop' && (
           <div className="open-list">
             <CounterRow
-              title="Hive Tips"
-              subtitle="Meta: 4 y 7 TIPS para RP"
-              value={teleopHiveTips}
-              onDecrement={() => setTeleopHiveTips(Math.max(0, teleopHiveTips - 1))}
-              onIncrement={() => setTeleopHiveTips(teleopHiveTips + 1)}
+              title="Polen en Balancín (Hive)"
+              value={teleopHivePollen}
+              onDecrement={() => setTeleopHivePollen(Math.max(0, teleopHivePollen - 1))}
+              onIncrement={() => setTeleopHivePollen(teleopHivePollen + 1)}
+            />
+
+            <CounterRow
+              title="Néctar en Balancín (Hive)"
+              value={teleopHiveNectar}
+              onDecrement={() => setTeleopHiveNectar(Math.max(0, teleopHiveNectar - 1))}
+              onIncrement={() => setTeleopHiveNectar(teleopHiveNectar + 1)}
             />
 
             {/* Propiedad de la Flor */}
@@ -862,16 +866,14 @@ export default function MatchScoutingPage() {
             </div>
 
             <CounterRow
-              title="Polen en Flor"
-              subtitle="Puntúa si se posee la flor"
+              title="Polen en Flor (Flower)"
               value={flowerPollen}
               onDecrement={() => setFlowerPollen(Math.max(0, flowerPollen - 1))}
               onIncrement={() => setFlowerPollen(flowerPollen + 1)}
             />
 
             <CounterRow
-              title="Néctar en Flor"
-              subtitle="Elementos de néctar depositados"
+              title="Néctar en Flor (Flower)"
               value={flowerNectar}
               onDecrement={() => setFlowerNectar(Math.max(0, flowerNectar - 1))}
               onIncrement={() => setFlowerNectar(flowerNectar + 1)}

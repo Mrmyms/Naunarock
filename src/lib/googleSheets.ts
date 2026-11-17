@@ -56,7 +56,7 @@ export async function appendScoutRow(sheetName: string, rowValues: any[]) {
 
   const response = await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: `${sheetName}!A:AA`,
+    range: `${sheetName}!A:AD`,
     valueInputOption: 'USER_ENTERED',
     insertDataOption: 'INSERT_ROWS',
     requestBody: {

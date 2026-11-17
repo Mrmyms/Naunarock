@@ -116,26 +116,12 @@ export default function BiobuzzFieldSelector({
         }}
       >
         <svg
-          viewBox="0 0 384 388"
+          viewBox="0 0 384 372"
           width="100%"
           style={{ display: 'block', userSelect: 'none', touchAction: 'manipulation' }}
           role="img"
           aria-label="Mapa interactivo de cancha FTC BIOBUZZ 6 por 6"
         >
-          {/* Top / Bottom Audience orientation label */}
-          <text
-            x="200"
-            y={rotated ? 13 : 378}
-            textAnchor="middle"
-            fill="rgba(255, 255, 255, 0.55)"
-            fontSize="10"
-            fontWeight="800"
-            letterSpacing="2"
-            fontFamily="var(--font-telemetry)"
-          >
-            AUDIENCE
-          </text>
-
           {/* Rotatable Field Group */}
           <g transform={fieldTransform}>
             {/* Outer Field Perimeter */}
