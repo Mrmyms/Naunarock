@@ -1,20 +1,20 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import BiobuzzFieldSelector from '@/components/BiobuzzFieldSelector';
 import NautilusNavMenu from '@/components/NautilusNavMenu';
 
 const SCOUTER_STORAGE_KEY = 'nautilus_4010_scouter_v1';
 const CHUNK_SIZE = 45000;
 const MAX_CHUNKS_PER_REQ = 35;
 
-const ROBOT_TYPE_OPTIONS = ['Torreta', 'Dumper', 'Shooter fijo', 'Brazo / Elevador', 'Defensa / Pushbot', 'Híbrido'] as const;
 const CHASSIS_OPTIONS = ['Mecanum', 'Swerve', 'Tank (6WD/8WD)', 'X-Drive', 'Otro'] as const;
 const INTAKE_OPTIONS = ['Rodillos Compliant', 'Bumper Activo', 'Pinza/Garra', 'Por Gravedad', 'Otro'] as const;
 const CAPACITY_OPTIONS = ['1 pieza (Single)', '2 piezas', '3+ piezas'] as const;
-const HIVE_OPTIONS = ['Shooter a distancia', 'Brazo extensible', 'Impacto/Empuje', 'No voltea'] as const;
+const HIVE_OPTIONS = ['Shooter', 'Brazo extensible', 'Impacto/Empuje', 'No voltea'] as const;
+const SHOOTER_SUBTYPES = ['Torreta', 'Fijo', 'Hood ajustable', 'Dumper', 'Doble volante', 'Otro'] as const;
 const FLOWER_OPTIONS = ['Disparo elevado', 'Elevador vertical', 'Depósito directo', 'No juega flor'] as const;
 const AUTO_ROUTINE_OPTIONS = ['Leave básico', 'Park directo', 'Hive Tip (1 o 2)', 'Flower scoring', 'Sin Auto'] as const;
-const AUTO_SIDE_OPTIONS = ['Pared Izquierda', 'Centro', 'Pared Derecha', 'Indiferente'] as const;
 const SENSOR_OPTIONS = ['AprilTags (Webcam)', 'Deadwheel Odometry', 'Sensores ToF/Distancia', 'Solo Encoders'] as const;
 const ROLE_OPTIONS = ['Hive Tipper (Lanzador)', 'Flower Finisher', 'Garden Sweeper', 'Híbrido'] as const;
 const DRIVER_HOURS_OPTIONS = ['< 5 horas', '5 - 15 horas', '> 15 horas'] as const;
@@ -47,7 +47,6 @@ type SavedPitEntry = {
   ROL_PREFERIDO?: string;
   NOTAS?: string;
   FOTOS_COUNT?: string | number;
-  TIPO_ROBOT?: string;
   photoIds?: string[];
 };
 
@@ -87,17 +86,19 @@ export default function PitScoutingPage() {
   const [scouter, setScouter] = useState<string>('');
 
   // Hardware & Mecánica
-  const [robotType, setRobotType] = useState<string>('Torreta');
   const [chassisType, setChassisType] = useState<string>('Mecanum');
   const [weight, setWeight] = useState<string>('');
   const [intakeType, setIntakeType] = useState<string>('Rodillos Compliant');
   const [capacity, setCapacity] = useState<string>('1 pieza (Single)');
-  const [hiveMech, setHiveMech] = useState<string>('Shooter a distancia');
+  const [hiveMech, setHiveMech] = useState<string>('Shooter');
+  const [shooterType, setShooterType] = useState<string>('Torreta');
+  const [shooterOther, setShooterOther] = useState<string>('');
   const [flowerMech, setFlowerMech] = useState<string>('Disparo elevado');
 
   // Rutas y Software (Auto)
   const [autoRoutines, setAutoRoutines] = useState<string[]>(['Leave básico']);
-  const [autoSide, setAutoSide] = useState<string>('Indiferente');
+  const [autoStartZones, setAutoStartZones] = useState<string[]>([]);
+  const [fieldAlliance, setFieldAlliance] = useState<'blue' | 'red'>('blue');
   const [sensorsVision, setSensorsVision] = useState<string[]>(['Solo Encoders']);
   const [claimedAutoPoints, setClaimedAutoPoints] = useState<string>('0');
 
@@ -216,18 +217,28 @@ export default function PitScoutingPage() {
     setPhotos((prev) => prev.map((p) => (p.localId === localId ? { ...p, caption } : p)));
   };
 
+  const toggleAutoZone = (zoneId: string) => {
+    setAutoStartZones((prev) => {
+      if (prev.includes(zoneId)) {
+        return prev.filter((z) => z !== zoneId);
+      }
+      return [...prev, zoneId].sort();
+    });
+  };
+
   const handleResetTeamFields = () => {
     setTeamNumber('');
     setTeamName('');
-    setRobotType('Torreta');
     setChassisType('Mecanum');
     setWeight('');
     setIntakeType('Rodillos Compliant');
     setCapacity('1 pieza (Single)');
-    setHiveMech('Shooter a distancia');
+    setHiveMech('Shooter');
+    setShooterType('Torreta');
+    setShooterOther('');
     setFlowerMech('Disparo elevado');
     setAutoRoutines(['Leave básico']);
-    setAutoSide('Indiferente');
+    setAutoStartZones([]);
     setSensorsVision(['Solo Encoders']);
     setClaimedAutoPoints('0');
     setPreferredRole('Hive Tipper (Lanzador)');
@@ -310,6 +321,14 @@ export default function PitScoutingPage() {
 
       setSaveProgress('Guardando ficha en Pit_BIOBUZZ...');
 
+      const resolvedHiveMech =
+        hiveMech === 'Shooter'
+          ? `Shooter (${shooterType === 'Otro' && shooterOther.trim() ? shooterOther.trim() : shooterType})`
+          : hiveMech;
+
+      const resolvedAutoSide =
+        autoStartZones.length > 0 ? autoStartZones.join(', ') : 'Indiferente';
+
       const res = await fetch('/api/pit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -317,15 +336,14 @@ export default function PitScoutingPage() {
           teamNumber: parsedTeam,
           teamName: teamName.trim(),
           scouter: scouter.trim(),
-          robotType,
           chassisType,
           weight: weight.trim() === '' ? '' : Number(weight),
           intakeType,
           capacity,
-          hiveMech,
+          hiveMech: resolvedHiveMech,
           flowerMech,
           autoRoutines,
-          autoSide,
+          autoSide: resolvedAutoSide,
           sensorsVision,
           claimedAutoPoints: Number(claimedAutoPoints) || 0,
           driverHours,
@@ -496,7 +514,7 @@ export default function PitScoutingPage() {
                           #{entry.EQUIPO || '?'} {entry.NOMBRE_EQUIPO ? `• ${entry.NOMBRE_EQUIPO}` : ''}
                         </div>
                         <div style={{ fontSize: '11px', color: 'var(--nautilus-gray)', marginTop: '2px' }}>
-                          {entry.TIPO_ROBOT ? `${entry.TIPO_ROBOT} • ` : ''}{entry.CHASIS || '—'} • {entry.ROL_PREFERIDO || '—'}
+                          {entry.CHASIS || '—'} • {entry.ROL_PREFERIDO || '—'}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
@@ -687,24 +705,6 @@ export default function PitScoutingPage() {
 
               <div>
                 <span className="input-duo-label" style={{ display: 'block', marginBottom: '6px' }}>
-                  Tipo de Robot
-                </span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                  {ROBOT_TYPE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setRobotType(opt)}
-                      className={`btn-chip-duo ${robotType === opt ? 'selected' : ''}`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <span className="input-duo-label" style={{ display: 'block', marginBottom: '6px' }}>
                   Tipo de Chasis
                 </span>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
@@ -787,6 +787,56 @@ export default function PitScoutingPage() {
                     </button>
                   ))}
                 </div>
+
+                {hiveMech === 'Shooter' && (
+                  <div
+                    style={{
+                      marginTop: '8px',
+                      background: '#04042B',
+                      border: '1px solid #EDB824',
+                      borderRadius: '4px',
+                      padding: '10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                    }}
+                  >
+                    <span className="input-duo-label" style={{ color: '#EDB824' }}>
+                      Especifica el Tipo de Shooter
+                    </span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      {SHOOTER_SUBTYPES.map((sub) => (
+                        <button
+                          key={sub}
+                          type="button"
+                          onClick={() => setShooterType(sub)}
+                          className={`btn-chip-duo ${shooterType === sub ? 'selected-purple' : ''}`}
+                        >
+                          {sub}
+                        </button>
+                      ))}
+                    </div>
+                    {shooterType === 'Otro' && (
+                      <input
+                        type="text"
+                        placeholder="Especifica el tipo de shooter..."
+                        value={shooterOther}
+                        onChange={(e) => setShooterOther(e.target.value)}
+                        style={{
+                          background: '#070733',
+                          border: '1px solid #451F66',
+                          borderRadius: '4px',
+                          padding: '9px 10px',
+                          color: '#FFFFFF',
+                          fontFamily: 'inherit',
+                          fontSize: '13px',
+                          outline: 'none',
+                          userSelect: 'text',
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -832,22 +882,58 @@ export default function PitScoutingPage() {
                 </div>
               </div>
 
-              <div>
-                <span className="input-duo-label" style={{ display: 'block', marginBottom: '6px' }}>
-                  Lado Preferido en Auto
-                </span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                  {AUTO_SIDE_OPTIONS.map((opt) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setAutoStartZones([])}
+                    className={`btn-chip-duo ${autoStartZones.length === 0 ? 'selected' : ''}`}
+                    style={{ minHeight: '36px', padding: '6px 12px' }}
+                  >
+                    Indiferente
+                  </button>
+
+                  <div style={{ display: 'flex', gap: '6px' }}>
                     <button
-                      key={opt}
                       type="button"
-                      onClick={() => setAutoSide(opt)}
-                      className={`btn-chip-duo ${autoSide === opt ? 'selected' : ''}`}
+                      onClick={() => setFieldAlliance('blue')}
+                      className="btn-chip-duo"
+                      style={{
+                        minHeight: '36px',
+                        padding: '6px 10px',
+                        border: fieldAlliance === 'blue' ? '2px solid #3B82F6' : '1px solid #451F66',
+                        color: fieldAlliance === 'blue' ? '#FFFFFF' : undefined,
+                        background: fieldAlliance === 'blue' ? 'rgba(59, 130, 246, 0.16)' : '#070733',
+                      }}
                     >
-                      {opt}
+                      Vista Azul
                     </button>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => setFieldAlliance('red')}
+                      className="btn-chip-duo"
+                      style={{
+                        minHeight: '36px',
+                        padding: '6px 10px',
+                        border: fieldAlliance === 'red' ? '2px solid #EF4444' : '1px solid #451F66',
+                        color: fieldAlliance === 'red' ? '#FFFFFF' : undefined,
+                        background: fieldAlliance === 'red' ? 'rgba(239, 68, 68, 0.16)' : '#070733',
+                      }}
+                    >
+                      Vista Roja
+                    </button>
+                  </div>
                 </div>
+
+                <BiobuzzFieldSelector
+                  alliance={fieldAlliance}
+                  value=""
+                  selectedValues={autoStartZones}
+                  teamNumber={parsedTeam > 0 ? parsedTeam : undefined}
+                  title="Posición / Lado Preferido en Auto"
+                  emptyHint="Indiferente (o toca zonas A–E)"
+                  onChange={toggleAutoZone}
+                />
               </div>
 
               <div>

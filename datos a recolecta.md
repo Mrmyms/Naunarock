@@ -49,7 +49,7 @@ Cada partido es cubierto por **4 scouters** (2 alianza azul y 2 alianza roja), s
 
 ---
 
-## 2. Pit Scouting — Hoja `Pit_BIOBUZZ` (`A:T`, 20 columnas)
+## 2. Pit Scouting — Hoja `Pit_BIOBUZZ` (`A:S`, 19 columnas)
 
 Se registra en `/pit` para documentar las capacidades mecánicas, software y fotos de cada equipo.
 
@@ -63,10 +63,10 @@ Se registra en `/pit` para documentar las capacidades mecánicas, software y fot
 | `F` | `PESO_LB` | Decimal (lb, referencia `<= 42 lb` según R103). |
 | `G` | `INTAKE` | `Rodillos Compliant`, `Bumper Activo`, `Pinza/Garra`, `Por Gravedad`, `Otro`. |
 | `H` | `CAPACIDAD` | `1 pieza (Single)`, `2 piezas`, `3+ piezas`. |
-| `I` | `MECANISMO_HIVE` | `Shooter a distancia`, `Brazo extensible`, `Impacto/Empuje`, `No voltea`. |
+| `I` | `MECANISMO_HIVE` | `Shooter (Torreta / Fijo / Hood ajustable / Dumper / Doble volante / Otro)`, `Brazo extensible`, `Impacto/Empuje`, `No voltea`. |
 | `J` | `MECANISMO_FLOR` | `Disparo elevado`, `Elevador vertical`, `Depósito directo`, `No juega flor`. |
 | `K` | `RUTINAS_AUTO` | Selección múltiple (`Leave básico`, `Park directo`, `Hive Tip (1 o 2)`, `Flower scoring`, `Sin Auto`). |
-| `L` | `LADO_AUTO` | `Pared Izquierda`, `Centro`, `Pared Derecha`, `Indiferente`. |
+| `L` | `LADO_AUTO` | Zonas `A–E` seleccionadas en mapa 6×6 o `Indiferente`. |
 | `M` | `SENSORES_VISION` | Selección múltiple (`AprilTags (Webcam)`, `Deadwheel Odometry`, `Sensores ToF/Distancia`, `Solo Encoders`). |
 | `N` | `AUTO_PTS_EST` | Entero (`0`+). |
 | `O` | `HORAS_DRIVER` | `< 5 horas`, `5 - 15 horas`, `> 15 horas`. |
@@ -74,7 +74,6 @@ Se registra en `/pit` para documentar las capacidades mecánicas, software y fot
 | `Q` | `NOTAS` | Texto libre de observaciones en pits. |
 | `R` | `FOTOS_COUNT` | Entero (cantidad de fotos asociadas). |
 | `S` | `FOTOS_IDS` | Lista separada por comas de `PHOTO_ID` en `Pit_Fotos`. |
-| `T` | `TIPO_ROBOT` | `Torreta`, `Dumper`, `Shooter fijo`, `Brazo / Elevador`, `Defensa / Pushbot`, `Híbrido`. |
 
 ### Almacenamiento de Fotos — Hoja `Pit_Fotos` (`A:J`, 10 columnas)
 

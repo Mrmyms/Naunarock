@@ -28,14 +28,13 @@ const PIT_HEADERS = [
   'NOTAS',
   'FOTOS_COUNT',
   'FOTOS_IDS',
-  'TIPO_ROBOT',
 ];
 
 export async function GET() {
   try {
     let rows: any[][];
     try {
-      rows = await getSheetRows(PIT_SHEET, 'A1:T1000');
+      rows = await getSheetRows(PIT_SHEET, 'A1:S1000');
     } catch (err: any) {
       const msg = String(err?.message || '');
       if (msg.includes('Unable to parse range')) {
@@ -131,7 +130,6 @@ export async function POST(request: Request) {
       String(data.notes || '').trim(),
       photoIds.length,
       photoIds.join(','),
-      String(data.robotType || '').trim(),
     ];
 
     const result = await appendRows(PIT_SHEET, [row], 'RAW');

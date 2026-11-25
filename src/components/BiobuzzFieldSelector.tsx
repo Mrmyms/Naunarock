@@ -100,8 +100,11 @@ export const BLUE_START_ZONES: StartZone[] = [
 interface BiobuzzFieldSelectorProps {
   alliance: 'blue' | 'red';
   value: string;
+  selectedValues?: string[];
   teamNumber?: number;
   showMissing?: boolean;
+  title?: string;
+  emptyHint?: string;
   onChange: (pos: string) => void;
 }
 
@@ -111,8 +114,11 @@ const ROWS = ['6', '5', '4', '3', '2', '1'];
 export default function BiobuzzFieldSelector({
   alliance,
   value,
+  selectedValues,
   teamNumber,
   showMissing = false,
+  title = 'Posición de Inicio',
+  emptyHint = 'Toca una zona (A–E) en el mapa',
   onChange,
 }: BiobuzzFieldSelectorProps) {
   const [rotated, setRotated] = useState(false);
@@ -120,7 +126,10 @@ export default function BiobuzzFieldSelector({
   const zones = alliance === 'red' ? RED_START_ZONES : BLUE_START_ZONES;
   const allianceColor = alliance === 'red' ? '#EF4444' : '#3B82F6';
   const allianceGlow = alliance === 'red' ? 'rgba(239, 68, 68, 0.22)' : 'rgba(59, 130, 246, 0.22)';
-  const selectedZone = zones.find((z) => z.id === value) ?? null;
+  const isMulti = Array.isArray(selectedValues);
+  const selectedSet = new Set(isMulti ? selectedValues : value ? [value] : []);
+  const selectedZone = !isMulti ? zones.find((z) => z.id === value) ?? null : null;
+  const hasSelection = selectedSet.size > 0;
 
   // Center of field for 180deg rotation: field is x=[32..368] (cx=200), y=[20..356] (cy=188)
   const fieldTransform = rotated ? 'rotate(180 200 188)' : undefined;
@@ -132,16 +141,22 @@ export default function BiobuzzFieldSelector({
       {/* Header row with selected zone & 180° flip button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <span className="item-main-text">Posición de Inicio</span>
+          <span className="item-main-text">{title}</span>
           <span
             className="mono-tabular"
             style={{
               fontSize: '12px',
               fontWeight: 700,
-              color: selectedZone ? '#EDB824' : showMissing ? '#EF4444' : 'var(--nautilus-gray)',
+              color: hasSelection ? '#EDB824' : showMissing ? '#EF4444' : 'var(--nautilus-gray)',
             }}
           >
-            {selectedZone ? `Posición ${selectedZone.id} · ${selectedZone.label} (${selectedZone.code})` : 'Toca una zona (A–E) en el mapa'}
+            {isMulti
+              ? selectedSet.size > 0
+                ? `Zona${selectedSet.size === 1 ? '' : 's'}: ${Array.from(selectedSet).join(', ')}`
+                : emptyHint
+              : selectedZone
+                ? `Posición ${selectedZone.id} · ${selectedZone.label} (${selectedZone.code})`
+                : emptyHint}
           </span>
         </div>
 
@@ -181,7 +196,7 @@ export default function BiobuzzFieldSelector({
           borderRadius: '6px',
           padding: '8px',
           background: '#04042B',
-          border: showMissing && !selectedZone ? '2px solid #EF4444' : '1px solid #451F66',
+          border: showMissing && !hasSelection ? '2px solid #EF4444' : '1px solid #451F66',
         }}
       >
         <svg
@@ -442,7 +457,7 @@ export default function BiobuzzFieldSelector({
 
             {/* CLICKABLE VALID ROBOT STARTING ZONES FOR ACTIVE ALLIANCE */}
             {zones.map((zone) => {
-              const isSelected = selectedZone?.id === zone.id;
+              const isSelected = selectedSet.has(zone.id);
               const { cx, cy } = zone;
 
               return (
