@@ -1,5 +1,5 @@
 # Sistema de Scouting FTC 2026-2027: BIOBUZZ
-## Especificación Funcional de Datos a Recolectar (Match & Pit Scouting)
+## Especificación Funcional y Esquemas de Datos (Match & Pit Scouting)
 
 > **Temporada**: FIRST Tech Challenge (FTC) 2026-2027  
 > **Juego Oficial**: BIOBUZZ presented by RTX (Manual v1)  
@@ -7,139 +7,76 @@
 
 ---
 
-## 1. Match Scouting (Por Robot en Cada Partido)
+## 1. Match Scouting — Hoja `Captura_BIOBUZZ` (`A:AE`, 31 columnas)
 
-Cada partido debe ser cubierto por **4 scouters** (2 para la alianza roja y 2 para la alianza azul), donde cada scouter sigue a un robot asignado de inicio a fin.
+Cada partido es cubierto por **4 scouters** (2 alianza azul y 2 alianza roja), siguiendo a un robot asignado de inicio a fin desde `/`.
 
-### A. Metadatos de Control
-| Campo | Tipo | Opciones / Formato | Propósito Funcional |
-| :--- | :---: | :--- | :--- |
-| `match_num` | Entero | `1, 2, 3...` | Llave para cruzar con el fixture/schedule y análisis rolling. |
-| `team_num` | Entero | Número de equipo (ej. `4635`) | Identificador único del equipo. |
-| `alliance_color` | Selector | `ROJO` / `AZUL` | Crucial: Flowers y Gardens pertenecen a una alianza específica. |
-| `scouter_name` | Texto | Nombre del scouter | Control de calidad y auditoría de datos. |
+### Columnas exactas (`Captura_BIOBUZZ!A1:AE1`)
 
----
-
-### B. Período Autónomo (30 segundos)
-*El autónomo aporta puntos directos y construye la base para el **SWARM RP**.*
-
-| Campo | Tipo | Opciones / Rango | Puntos Oficiales | Propósito Funcional |
-| :--- | :---: | :--- | :---: | :--- |
-| `auto_start_pos` | Selector | `Pared Exterior`<br>`Centro`<br>`Cerca de Hives` | — | Detección de incompatibilidades: evita colisiones entre aliados al coordinar rutas. |
-| `auto_leave` | Booleano | `Sí` / `No` | **3 pts** | Despegar del muro perimetral (Regla 10.5.4). Suma al umbral de SWARM RP. |
-| `auto_park` | Booleano | `Sí` / `No` | **5 pts** | Estacionarse en Loading Zone (Regla 10.5.4). Suma al umbral de SWARM RP. |
-| `auto_hive_tips` | Contador | `0, 1, 2...` | **20 pts c/u** | **Dato estelar**: Volteos bi-estables en auto. Aporta al umbral de Pollinator RP. |
-| `auto_pollen_scored` | Contador | `0, 1, 2...` | Variable | Piezas de polen anotadas en Flower o depositadas en auto. |
-| `auto_nectar_scored` | Contador | `0, 1, 2...` | Variable | Piezas de néctar anotadas en auto. |
-
----
-
-### C. Período TeleOp (2 minutos)
-*Mide la tasa de ciclo (cycle rate) y la especialización de roles en cancha.*
-
-| Campo | Tipo | Opciones / Rango | Puntos Oficiales | Propósito Funcional |
-| :--- | :---: | :--- | :---: | :--- |
-| `teleop_hive_tips` | Contador | `0, 1, 2, 3...` | **20 pts c/u** | **Métrica #1 de Picklist**: Volteos individuales para alcanzar 4 TIPS (Pollinator 1) y 7 TIPS (Pollinator 2). |
-| `teleop_flower_pollen` | Contador | `0, 1, 2...` | **2 pts c/u** | Polen colocado en la flor (Regla 10.5.2). Solo puntúa si la alianza posee la flor. |
-| `teleop_flower_nectar` | Contador | `0, 1, 2...` | Variable | Néctar colocado en la flor. Determina propiedad y bonus. |
-| `bottom_nectar_bonus` | Booleano | `Sí` / `No` | **5 pts** | Regla 10.5.2: ¿Colocó el néctar más bajo de su color en la flor? |
-| `flower_ownership` | Selector | `Controló Flor`<br>`Perdió Control`<br>`No compitió` | Multiplicador | Regla 10.5.2: Tener el néctar superior otorga todos los puntos contenidos en la flor. |
-| `garden_elements` | Contador | `0, 1, 2...` | **1 pt c/u** | Piezas acumuladas en el Garden de su alianza (Regla 10.5.3). |
-| `garden_descoring` | Booleano | `Sí` / `No` | — | Regla 10.5.3: Defensa legal. ¿Robó o desanotó piezas del Garden contrario? |
-
----
-
-### D. Endgame & Cierre del Match
-| Campo | Tipo | Opciones / Rango | Puntos Oficiales | Propósito Funcional |
-| :--- | :---: | :--- | :---: | :--- |
-| `teleop_park` | Booleano | `Sí` / `No` | **5 pts** | En Loading Zone al sonar el silbato final. Suma al SWARM RP. |
-| `robot_status` | Selector | `100% Operativo`<br>`Falla Mecánica Parcial`<br>`Desconectado/Inmóvil`<br>`No se presentó` | — | **Filtro de Fiabilidad**: Elimina robots con alto pico de puntos pero propensos a desconexión. |
-| `minor_fouls` | Contador | `0, 1, 2...` | **-5 pts al rival** | Contactos indebidos o invasión momentánea. |
-| `major_fouls` | Contador | `0, 1, 2...` | **-20 pts al rival** | Faltas graves (ej. interferir bajo Hives en volteo según G417). |
-| `yellow_red_cards` | Selector | `Ninguna`<br>`Amarilla`<br>`Roja` | — | Regla 10.6: Advertencia crítica para playoffs (2 amarillas = descalificación). |
-| `driver_skill` | Escala 1-5 | `1 (Lento/Torpe)` a `5 (Excelente)` | — | Agilidad, visión de campo y toma de decisiones del piloto. |
-| `tactical_notes` | Texto libre | Breve | — | Observaciones de campo (ej. *"se atora en esquinas"*, *"tiro muy preciso"*). |
+| Col | Encabezado | Origen / Tipo | Detalle funcional / Puntaje en app |
+| :---: | :--- | :--- | :--- |
+| `A` | `Timestamp` | Texto (`es-MX`) | Fecha/hora de captura (`America/Monterrey`). Se conserva si se sincronizó desde cola offline. |
+| `B` | `MATCH` | Entero | Número de match (`1, 2, 3...`). |
+| `C` | `EQUIPO` | Entero | Número de equipo FTC (ej. `4010`, `4635`). |
+| `D` | `ALIANZA` | Texto | `AZUL` o `ROJO`. |
+| `E` | `SCOUT` | Texto | Nombre del scouter (obligatorio, persistido en `localStorage`). |
+| `F` | `POSICIÓN INICIAL` | Selector mapa `A–E` | Zona de inicio sobre el mapa SVG 6×6 de BIOBUZZ (`A`, `B`, `C`, `D` o `E`). |
+| `G` | `AUTO LEAVE` | `SI` / `NO` | Despegó del muro perimetral (**+3 pts**). |
+| `H` | `AUTO PARK` | `SI` / `NO` | Estacionado en Loading Zone al fin de Auto (**+5 pts**). |
+| `I` | `AUTO HIVE POLLEN` | Entero | Piezas de Pollen en Balancín (Hive) en Auto (**+2 pts c/u**). |
+| `J` | `AUTO HIVE NÉCTAR` | Entero | Piezas de Néctar en Balancín (Hive) en Auto (**+2 pts c/u**). |
+| `K` | `AUTO FLOR POLLEN` | Entero | Piezas de Pollen en Flor en Auto (**+2 pts c/u**). |
+| `L` | `AUTO FLOR NÉCTAR` | Entero | Piezas de Néctar en Flor en Auto (**+2 pts c/u**). |
+| `M` | `TELE HIVE POLLEN` | Entero | Piezas de Pollen en Balancín (Hive) en TeleOp (**+2 pts c/u**). |
+| `N` | `TELE HIVE NÉCTAR` | Entero | Piezas de Néctar en Balancín (Hive) en TeleOp (**+2 pts c/u**). |
+| `O` | `PROPIEDAD FLOR` | Entero (`0–4`) | Flores tapadas / controladas con néctar superior (`0` = ninguna, `1–4` = multiplicador `×2` para piezas en flor). |
+| `P` | `TELE FLOR POLLEN` | Entero | Piezas de Pollen en Flor en TeleOp (**+2 pts c/u** si `PROPIEDAD FLOR > 0`). |
+| `Q` | `TELE FLOR NÉCTAR` | Entero | Piezas de Néctar en Flor en TeleOp (**+2 pts c/u** si `PROPIEDAD FLOR > 0`). |
+| `R` | `BOTTOM NÉCTAR` | `SI` / `NO` | Colocó el néctar más bajo en flor (**+5 pts**). |
+| `S` | `GARDEN PIEZAS` | Entero | Piezas acumuladas en Garden (**+1 pt c/u**). |
+| `T` | `DEFENSA GARDEN` | `SI` / `NO` | ¿Robó o removió piezas del Garden rival? |
+| `U` | `ENDGAME PARK` | `SI` / `NO` | Estacionado en Loading Zone al silbato final (**+5 pts**). |
+| `V` | `ESTATUS ROBOT` | Selector | `100% Operativo`, `Falla Mecánica Parcial`, `Desconectado/Inmóvil` o `No se presentó`. |
+| `W` | `FALTAS MENORES` | Entero | Faltas menores cometidas (**-5 pts c/u**). |
+| `X` | `FALTAS GRAVES` | Entero | Faltas graves cometidas (**-20 pts c/u**). |
+| `Y` | `TARJETAS` | Selector | `Ninguna`, `Amarilla`, `Roja`. |
+| `Z` | `PILOTO` | Entero (`1–5`) | Calificación de habilidad del piloto (`1` a `5`). |
+| `AA` | `NOTAS` | Texto | Notas tácticas breves del scouter. |
+| `AB` | `Auto Pts` | Entero | `(autoLeave ? 3 : 0) + (autoPark ? 5 : 0) + (autoHivePollen + autoHiveNectar + autoFlowerPollen + autoFlowerNectar) * 2`. |
+| `AC` | `TeleOp Pts` | Entero | `(teleopHivePollen + teleopHiveNectar) * 2 + (flowerPollen + flowerNectar) * (flowerOwnership > 0 ? 2 : 0) + (bottomNectar ? 5 : 0) + gardenElements + (teleopPark ? 5 : 0)`. |
+| `AD` | `Faltas Pts` | Entero | `minorFouls * 5 + majorFouls * 20`. |
+| `AE` | `Puntos Netos` | Entero | `max(0, Auto Pts + TeleOp Pts - Faltas Pts)`. |
 
 ---
 
-## 2. Pit Scouting (Inspección en Pits)
+## 2. Pit Scouting — Hoja `Pit_BIOBUZZ` (`A:S`, 19 columnas)
 
-Se levanta **una sola vez por equipo** antes del arranque de los partidos oficiales.
+Se registra en `/pit` para documentar las capacidades mecánicas, software y fotos de cada equipo.
 
-### A. Especificaciones Mecánicas / Hardware
-| Campo | Tipo | Opciones / Formato | Propósito Funcional |
-| :--- | :---: | :--- | :--- |
-| `chassis_type` | Selector | `Mecanum`<br>`Swerve`<br>`Tank (6WD/8WD)`<br>`X-Drive`<br>`Otro` | Determina tracción, agilidad omnidireccional y resistencia al empuje. |
-| `robot_weight_lb` | Decimal | Peso en libras o kg (máx. 42 lbs per R103) | Relación aceleración/empuje en defensas de Garden. |
-| `intake_type` | Selector | `Rodillos Compliant`<br>`Bumper Activo`<br>`Pinza/Garra`<br>`Por Gravedad` | Velocidad de recolección de Pollen y Nectar desde el suelo. |
-| `holding_capacity` | Selector | `1 pieza (Single)`<br>`2 piezas`<br>`3+ piezas` | Determina el estilo de ciclo (disparo inmediato vs almacenamiento). |
-| `hive_mechanism` | Selector | `Shooter a distancia`<br>`Brazo extensible`<br>`Impacto/Empuje`<br>`No voltea` | Identifica qué robots pueden ser lanzadores para los RPs de Pollinator. |
-| `flower_mechanism` | Selector | `Disparo elevado`<br>`Elevador vertical`<br>`Depósito directo`<br>`No juega flor` | Rango de interacción con la flor (lejos o pegado a la estructura). |
+| Col | Encabezado | Tipo / Opciones |
+| :---: | :--- | :--- |
+| `A` | `Timestamp` | Texto (`es-MX`, `America/Monterrey`). |
+| `B` | `EQUIPO` | Entero (obligatorio, `> 0`). |
+| `C` | `NOMBRE_EQUIPO` | Texto libre. |
+| `D` | `SCOUT` | Texto (obligatorio, persistido en `localStorage`). |
+| `E` | `CHASIS` | `Mecanum`, `Swerve`, `Tank (6WD/8WD)`, `X-Drive`, `Otro`. |
+| `F` | `PESO_LB` | Decimal (lb, referencia `<= 42 lb` según R103). |
+| `G` | `INTAKE` | `Rodillos Compliant`, `Bumper Activo`, `Pinza/Garra`, `Por Gravedad`, `Otro`. |
+| `H` | `CAPACIDAD` | `1 pieza (Single)`, `2 piezas`, `3+ piezas`. |
+| `I` | `MECANISMO_HIVE` | `Shooter a distancia`, `Brazo extensible`, `Impacto/Empuje`, `No voltea`. |
+| `J` | `MECANISMO_FLOR` | `Disparo elevado`, `Elevador vertical`, `Depósito directo`, `No juega flor`. |
+| `K` | `RUTINAS_AUTO` | Selección múltiple (`Leave básico`, `Park directo`, `Hive Tip (1 o 2)`, `Flower scoring`, `Sin Auto`). |
+| `L` | `LADO_AUTO` | `Pared Izquierda`, `Centro`, `Pared Derecha`, `Indiferente`. |
+| `M` | `SENSORES_VISION` | Selección múltiple (`AprilTags (Webcam)`, `Deadwheel Odometry`, `Sensores ToF/Distancia`, `Solo Encoders`). |
+| `N` | `AUTO_PTS_EST` | Entero (`0`+). |
+| `O` | `HORAS_DRIVER` | `< 5 horas`, `5 - 15 horas`, `> 15 horas`. |
+| `P` | `ROL_PREFERIDO` | `Hive Tipper (Lanzador)`, `Flower Finisher`, `Garden Sweeper`, `Híbrido`. |
+| `Q` | `NOTAS` | Texto libre de observaciones en pits. |
+| `R` | `FOTOS_COUNT` | Entero (cantidad de fotos asociadas). |
+| `S` | `FOTOS_IDS` | Lista separada por comas de `PHOTO_ID` en `Pit_Fotos`. |
 
-### B. Rutas y Software
-| Campo | Tipo | Opciones / Formato | Propósito Funcional |
-| :--- | :---: | :--- | :--- |
-| `auto_routines` | Selección Múltiple | `Leave básico`<br>`Park directo`<br>`Hive Tip (1 o 2)`<br>`Flower scoring` | Menú de autónomos disponibles para coordinar antes de ingresar a cancha. |
-| `auto_preferred_side` | Selector | `Pared Izquierda`<br>`Centro`<br>`Pared Derecha`<br>`Indiferente` | Compatibilidad instantánea: evita colisiones por querer la misma posición de inicio. |
-| `sensors_vision` | Selección Múltiple | `AprilTags (Webcam)`<br>`Deadwheel Odometry`<br>`Sensores ToF/Distancia`<br>`Solo Encoders` | Confiabilidad y repetibilidad del autónomo en condiciones de arena. |
-| `claimed_auto_points` | Entero | Puntos que afirman hacer | Contraste entre expectativa de pit y rendimiento real en match scouting. |
+### Almacenamiento de Fotos — Hoja `Pit_Fotos` (`A:J`, 10 columnas)
 
-### C. Factor Humano y Rol de Alianza
-| Campo | Tipo | Opciones / Formato | Propósito Funcional |
-| :--- | :---: | :--- | :--- |
-| `driver_practice_hours` | Selector | `< 5 horas`<br>`5 - 15 horas`<br>`> 15 horas` | Alta correlación con la consistencia y evitación de faltas en playoffs. |
-| `preferred_role` | Selector | `Hive Tipper (Lanzador)`<br>`Flower Finisher`<br>`Garden Sweeper`<br>`Híbrido` | Permite buscar compañeros complementarios en la selección de alianzas. |
-| `robot_photo` | Archivo / URL | Imagen del robot | Reconocimiento visual inmediato en gradas y juntas de estrategia. |
+Cada foto se guarda en su calidad/resolución original dividida en fragmentos Base64 de hasta `45,000` caracteres (`valueInputOption: 'RAW'`):
 
----
-
-## 3. Resumen de Reglas de Puntuación (BIOBUZZ v1)
-
-### Valores de Puntos por Acción (Tabla 10-2)
-* **LEAVE (Auto)**: `3 pts`
-* **PARK (Auto)**: `5 pts`
-* **PARK (TeleOp)**: `5 pts`
-* **HIVE TIP (Auto)**: `20 pts`
-* **HIVE TIP (TeleOp)**: `20 pts`
-* **HIVE Cell Content (al final)**: `2 pts` por cada Pollen/Nectar en celda hacia arriba
-* **Bottom NECTAR Bonus (Flor)**: `5 pts`
-* **FLOWER Ownership**: `2 pts` por cada Pollen/Nectar en flor si tu alianza tiene el néctar más alto
-* **GARDEN**: `1 pt` por cada Pollen/Nectar en tu zona al final
-
-### Puntuaciones de Faltas (Tabla 10-4)
-* **MINOR FOUL**: `5 pts` otorgados al rival
-* **MAJOR FOUL**: `20 pts` otorgados al rival
-
-### Umbrales Oficiales de Ranking Points (Tabla 10-3)
-* **Victoria**: `3 RP`
-* **Empate**: `1 RP`
-* **SWARM RP (1 RP)**: $\ge$ **16 Puntos** combinados de `LEAVE + PARK` (Auto + TeleOp)
-* **POLLINATOR 1 RP (1 RP)**: $\ge$ **4 HIVE TIPS** completados por la alianza
-* **POLLINATOR 2 RP (1 RP)**: $\ge$ **7 HIVE TIPS** completados por la alianza
-
----
-
-## 4. Fórmulas de Análisis Automatizado (Motor TimeStone)
-
-Con esta estructura de datos, el algoritmo de **TimeStone** calculará de forma automática:
-
-1. **EPA Real de BIOBUZZ (Expected Points Added)**:
-   $$\text{Puntaje Bruto} = \text{Auto Pts} + \text{TeleOp Pts} + \text{Endgame Pts}$$
-   $$\text{EPA Neto} = \text{Puntaje Bruto} - (\text{Minor Fouls} \times 5 + \text{Major Fouls} \times 20)$$
-   *(Aplicando filtro IQR para eliminar outliers por desconexiones puntuales).*
-
-2. **Probabilidad de SWARM RP ($\ge 16$ pts)**:
-   $$\text{Swarm Pts} = (\text{Leave}_1 + \text{Leave}_2) + (\text{AutoPark}_1 + \text{AutoPark}_2) + (\text{TelePark}_1 + \text{TelePark}_2)$$
-   Si $\text{Swarm Pts} \ge 16 \implies \text{RP Obtenido}$.
-
-3. **Probabilidad de POLLINATOR 1 & 2 RPs**:
-   $$\text{Total TIPS Alianza} = \text{Tips Robot 1} + \text{Tips Robot 2}$$
-   * Umbral Pollinator 1: $\text{Total TIPS} \ge 4$
-   * Umbral Pollinator 2: $\text{Total TIPS} \ge 7$
-
-4. **Índice de Confiabilidad del Robot (% Reliability)**:
-   $$\% \text{ Confiabilidad} = \frac{\text{Matches con Estatus "100\% Operativo"}}{\text{Total de Matches Disputados}} \times 100$$
-
-5. **Net Fouls Penalty Rate**:
-   Promedio de puntos regalados al rival por partido. Un valor $> 15$ puntos desaconseja la selección del robot en playoffs.
+`Timestamp` | `PHOTO_ID` | `EQUIPO` | `NOMBRE_ARCHIVO` | `MIME_TYPE` | `ETIQUETA` | `PARTE` | `TOTAL_PARTES` | `TAMANO_BYTES` | `DATA_CHUNK`

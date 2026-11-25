@@ -108,24 +108,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Status Bar Superior estilo iOS */
-.ios-status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 28px 8px 28px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--nautilus-white);
-  letter-spacing: -0.2px;
-}
-
-.ios-status-bar-icons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .mono-tabular {
   font-family: var(--font-telemetry);
   font-variant-numeric: tabular-nums;
@@ -148,20 +130,6 @@ body {
   gap: 10px;
 }
 
-.avatar-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  background: var(--nautilus-purple);
-  border: 1.5px solid var(--nautilus-gold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--nautilus-gold);
-  font-weight: 800;
-  font-size: 14px;
-}
-
 .header-action-icon {
   width: 38px;
   height: 38px;
@@ -179,50 +147,6 @@ body {
 .header-action-icon:hover {
   background: var(--nautilus-purple);
   border-color: var(--nautilus-gold);
-}
-
-/* ================= BALANCE / PUNTOS CARD HERO ================= */
-
-.hero-balance-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 24px 20px 24px;
-  text-align: center;
-}
-
-.hero-balance-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--nautilus-gray);
-  letter-spacing: 0.4px;
-  margin-bottom: 4px;
-}
-
-.hero-balance-amount {
-  font-size: 44px;
-  font-weight: 800;
-  letter-spacing: -1.2px;
-  color: var(--nautilus-white);
-  line-height: 1.1;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.hero-balance-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(237, 184, 36, 0.12);
-  border: 1px solid rgba(237, 184, 36, 0.3);
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--nautilus-gold);
-  margin-top: 8px;
 }
 
 /* ================= 3-BUTTON ACTION DOCK ================= */
@@ -263,39 +187,7 @@ body {
   transform: scale(0.97);
 }
 
-.dock-circle-plus {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--nautilus-white);
-  color: #010124;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.25);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-  flex-shrink: 0;
-}
-
-.dock-circle-plus:hover {
-  transform: scale(1.05);
-  box-shadow: 0 10px 28px rgba(255, 255, 255, 0.4);
-}
-
-.dock-circle-plus:active {
-  transform: scale(0.95);
-}
-
 /* ================= DUAL KPI SPLIT CARDS (Income / Expense style) ================= */
-
-.dual-cards-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 0 24px 20px 24px;
-}
 
 .fintech-kpi-card {
   background: var(--surface-card);
@@ -333,15 +225,6 @@ body {
   margin-bottom: 4px;
 }
 
-.fintech-kpi-sub {
-  font-size: 11px;
-  color: var(--nautilus-gray);
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
 /* ================= RECENT / FORM SECTION CONTAINER ================= */
 
 .fintech-content-section {
@@ -351,128 +234,11 @@ body {
   gap: 14px;
 }
 
-.section-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.section-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--nautilus-white);
-  letter-spacing: -0.2px;
-}
-
-.section-link {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--nautilus-gold);
-  text-decoration: none;
-  cursor: pointer;
-  background: none;
-  border: none;
-}
-
-/* Avatar Carousel (Send Again style -> Equipos / Scouters) */
-.avatar-row-scroll {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  padding: 4px 2px 8px 2px;
-  scrollbar-width: none;
-}
-
-.avatar-row-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.avatar-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-}
-
-.avatar-photo {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--nautilus-white);
-  transition: all 0.2s ease;
-}
-
-.avatar-item:hover .avatar-photo,
-.avatar-item.active .avatar-photo {
-  border-color: var(--nautilus-gold);
-  background: rgba(237, 184, 36, 0.15);
-  color: var(--nautilus-gold);
-  box-shadow: 0 0 16px rgba(237, 184, 36, 0.35);
-}
-
-.avatar-name {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--nautilus-gray);
-  max-width: 54px;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Lista Glassmorphic (Recent Transactions / Metricas de Juego) */
+/* Lista Telemetría */
 .glass-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.glass-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--surface-card);
-  border: 1px solid var(--nautilus-purple);
-  border-radius: 6px;
-  transition: border-color 0.15s ease, background 0.15s ease;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.glass-list-item:hover {
-  background: var(--surface-card-hover);
-  border-color: var(--nautilus-gold);
-}
-
-.glass-list-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  flex: 1;
-}
-
-.item-icon-box {
-  width: 38px;
-  height: 38px;
-  border-radius: 4px;
-  background: var(--nautilus-navy);
-  border: 1px solid var(--nautilus-purple);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--nautilus-gold);
 }
 
 .item-main-text {
@@ -486,20 +252,6 @@ body {
   font-size: 11px;
   color: var(--nautilus-gray);
   margin-top: 2px;
-}
-
-.item-right-amount {
-  text-align: right;
-}
-
-.amount-text {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--nautilus-white);
-}
-
-.amount-text.positive {
-  color: var(--nautilus-gold);
 }
 
 /* ================= BARRA DE NAVEGACIÓN INFERIOR PWA ================= */
@@ -669,54 +421,6 @@ body {
   line-height: 1.05;
   color: var(--nautilus-white);
   letter-spacing: -0.5px;
-}
-
-/* ================= CONTADORES (+ / -) ERGONÓMICOS PARA MÓVIL ================= */
-
-.fintech-counter-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.fintech-btn-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 4px;
-  background: var(--nautilus-purple);
-  border: 1px solid #633291;
-  color: var(--nautilus-white);
-  font-size: 20px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
-}
-
-.fintech-btn-circle:hover {
-  background: #572882;
-  border-color: var(--nautilus-gold);
-}
-
-.fintech-btn-circle:active {
-  transform: scale(0.95);
-}
-
-.fintech-btn-circle.gold {
-  background: var(--nautilus-gold);
-  color: var(--nautilus-navy);
-  border: 1px solid var(--nautilus-gold);
-}
-
-.fintech-counter-num {
-  font-size: 20px;
-  font-weight: 800;
-  min-width: 28px;
-  text-align: center;
-  color: var(--nautilus-white);
 }
 
 /* ================= CHIPS & INPUTS GLASSMORPHIC ================= */

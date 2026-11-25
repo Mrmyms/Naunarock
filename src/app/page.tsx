@@ -6,6 +6,13 @@ import BiobuzzFieldSelector, {
   RED_START_ZONES,
 } from '@/components/BiobuzzFieldSelector';
 import NautilusNavMenu from '@/components/NautilusNavMenu';
+import {
+  QueuedScoutEntry,
+  enqueueScoutPayload,
+  readScoutQueue,
+  removeFromScoutQueue,
+  syncScoutQueue,
+} from '@/lib/offlineQueue';
 
 type ScheduleTeam = {
   teamNumber: number;
@@ -31,7 +38,7 @@ type StationLock = 'none' | 'Blue-One' | 'Blue-Two' | 'Red-One' | 'Red-Two';
 const STORAGE_KEY = 'nautilus_4010_event_schedule_v1';
 const SCOUTER_STORAGE_KEY = 'nautilus_4010_scouter_v1';
 
-type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+type SaveState = 'idle' | 'saving' | 'saved' | 'queued' | 'error';
 
 function CounterRow({
   title,
@@ -199,6 +206,10 @@ export default function MatchScoutingPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showValidation, setShowValidation] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [queuedMatches, setQueuedMatches] = useState<QueuedScoutEntry[]>([]);
+  const [isOnline, setIsOnline] = useState(true);
+  const [syncingQueue, setSyncingQueue] = useState(false);
+  const [showQueueModal, setShowQueueModal] = useState(false);
   const savedResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const missingItems = useMemo(() => {
@@ -247,7 +258,23 @@ export default function MatchScoutingPage() {
     }
   }, [alliance, startPos]);
 
-  // Cargar evento y scouter guardados en localStorage al iniciar
+  const handleSyncQueue = async (silent = false) => {
+    setSyncingQueue(true);
+    try {
+      const result = await syncScoutQueue();
+      setQueuedMatches(result.remaining);
+      if (result.synced > 0) {
+        showToast(`${result.synced} match${result.synced === 1 ? '' : 'es'} sincronizado${result.synced === 1 ? '' : 's'}`);
+      } else if (!silent && result.failed > 0) {
+        showToast(`Sin conexión: ${result.remaining.length} pendiente${result.remaining.length === 1 ? '' : 's'}`);
+      }
+      return result;
+    } finally {
+      setSyncingQueue(false);
+    }
+  };
+
+  // Cargar evento, scouter y cola offline guardados en localStorage al iniciar
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -262,7 +289,32 @@ export default function MatchScoutingPage() {
     } catch (e) {
       console.error('Error leyendo datos de localStorage:', e);
     }
+
+    const initialQueue = readScoutQueue();
+    setQueuedMatches(initialQueue);
+
+    const onlineNow = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    setIsOnline(onlineNow);
+    if (onlineNow && initialQueue.length > 0) {
+      void handleSyncQueue(true);
+    }
+
+    const onOnline = () => {
+      setIsOnline(true);
+      if (readScoutQueue().length > 0) {
+        void handleSyncQueue(true);
+      }
+    };
+    const onOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+
     return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
       if (savedResetTimerRef.current) clearTimeout(savedResetTimerRef.current);
     };
   }, []);
@@ -402,7 +454,7 @@ export default function MatchScoutingPage() {
   };
 
   const handleSubmit = async () => {
-    if (saveState === 'saving' || saveState === 'saved') return;
+    if (saveState === 'saving' || saveState === 'saved' || saveState === 'queued') return;
 
     if (!isFormComplete) {
       setShowValidation(true);
@@ -416,59 +468,104 @@ export default function MatchScoutingPage() {
       return;
     }
 
+    const captureTimestamp = new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey' });
+    const payload = {
+      timestamp: captureTimestamp,
+      match,
+      team,
+      alliance: alliance === 'blue' ? 'AZUL' : 'ROJO',
+      scouter: scouter.trim(),
+      startPos,
+      autoLeave,
+      autoPark,
+      autoHivePollen,
+      autoHiveNectar,
+      autoFlowerPollen,
+      autoFlowerNectar,
+      teleopHivePollen,
+      teleopHiveNectar,
+      flowerPollen,
+      flowerNectar,
+      bottomNectar,
+      flowerOwnership,
+      flowerOwner: flowerOwnership,
+      gardenElements,
+      gardenDescore,
+      teleopPark,
+      status: robotStatus,
+      minorFouls,
+      majorFouls,
+      cardStatus,
+      driverSkill: driverSkill ?? 3,
+      driverRating: driverSkill ?? 3,
+      notes: tacticalNotes,
+      autoScore,
+      teleScore,
+      foulsScore,
+      netScore,
+    };
+
+    const queueCurrentMatch = (reason: string) => {
+      const updated = enqueueScoutPayload(payload, reason);
+      setQueuedMatches(updated);
+      if (typeof navigator !== 'undefined') {
+        navigator.vibrate?.([30, 30, 30]);
+      }
+      setSaveState('queued');
+      showToast(`Guardado en cola local (M#${match} #${team})`);
+      if (savedResetTimerRef.current) clearTimeout(savedResetTimerRef.current);
+      savedResetTimerRef.current = setTimeout(() => {
+        setSaveState('idle');
+        setMatch((prev) => prev + 1);
+        handleResetForNextMatch();
+      }, 1150);
+    };
+
     setSaveError(null);
     setSaveState('saving');
-    try {
-      const payload = {
-        match,
-        team,
-        alliance: alliance === 'blue' ? 'AZUL' : 'ROJO',
-        scouter: scouter.trim(),
-        startPos,
-        autoLeave,
-        autoPark,
-        autoHivePollen,
-        autoHiveNectar,
-        autoFlowerPollen,
-        autoFlowerNectar,
-        teleopHivePollen,
-        teleopHiveNectar,
-        flowerPollen,
-        flowerNectar,
-        bottomNectar,
-        flowerOwnership,
-        flowerOwner: flowerOwnership,
-        gardenElements,
-        gardenDescore,
-        teleopPark,
-        status: robotStatus,
-        minorFouls,
-        majorFouls,
-        cardStatus,
-        driverSkill: driverSkill ?? 3,
-        driverRating: driverSkill ?? 3,
-        notes: tacticalNotes,
-        autoScore,
-        teleScore,
-        foulsScore,
-        netScore,
-      };
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      queueCurrentMatch('Sin conexión a internet');
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    let isClientError = false;
+
+    try {
       const res = await fetch('/api/scout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Error al guardar en el servidor');
+      let json: any = null;
+      try {
+        json = await res.json();
+      } catch {
+        // ignore non-JSON body
+      }
+
+      if (res.status >= 400 && res.status < 500) {
+        isClientError = true;
+        throw new Error(json?.error || `Error de validación (${res.status})`);
+      }
+
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || `Error del servidor (${res.status})`);
       }
 
       if (typeof navigator !== 'undefined') {
         navigator.vibrate?.(45);
       }
       setSaveState('saved');
+
+      if (readScoutQueue().length > 0) {
+        void handleSyncQueue(true);
+      }
+
       if (savedResetTimerRef.current) clearTimeout(savedResetTimerRef.current);
       savedResetTimerRef.current = setTimeout(() => {
         setSaveState('idle');
@@ -476,8 +573,18 @@ export default function MatchScoutingPage() {
         handleResetForNextMatch();
       }, 1150);
     } catch (err: any) {
-      setSaveState('error');
-      setSaveError(err.message || 'Error de conexión');
+      if (isClientError) {
+        setSaveState('error');
+        setSaveError(err.message || 'Error de validación');
+      } else {
+        const reason =
+          err?.name === 'AbortError'
+            ? 'Tiempo de espera agotado'
+            : err?.message || 'Error de red';
+        queueCurrentMatch(reason);
+      }
+    } finally {
+      clearTimeout(timer);
     }
   };
 
@@ -496,6 +603,42 @@ export default function MatchScoutingPage() {
         <NautilusNavMenu />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {queuedMatches.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowQueueModal(true)}
+              className="dock-pill-btn mono-tabular"
+              style={{
+                flex: 'none',
+                padding: '6px 8px',
+                fontSize: '11px',
+                background: '#451F66',
+                borderColor: '#EDB824',
+                color: '#EDB824',
+                borderRadius: '4px',
+              }}
+              title="Matches pendientes en cola local"
+            >
+              <span>{syncingQueue ? 'Sync...' : `Cola (${queuedMatches.length})`}</span>
+            </button>
+          ) : !isOnline ? (
+            <span
+              className="mono-tabular"
+              style={{
+                padding: '5px 7px',
+                fontSize: '10px',
+                fontWeight: 800,
+                background: 'rgba(239, 68, 68, 0.14)',
+                border: '1px solid #EF4444',
+                color: '#FCA5A5',
+                borderRadius: '4px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              OFFLINE
+            </span>
+          ) : null}
+
           <button
             onClick={() => setShowEventModal(true)}
             className="dock-pill-btn mono-tabular"
@@ -519,15 +662,15 @@ export default function MatchScoutingPage() {
             <span>{eventInfo ? eventInfo.code : 'Evento'}</span>
           </button>
 
-          {saveState === 'saved' ? (
+          {saveState === 'saved' || saveState === 'queued' ? (
             <div
               className="mono-tabular save-success-pulse"
               role="status"
               aria-live="polite"
               style={{
-                background: '#EDB824',
+                background: saveState === 'queued' ? '#451F66' : '#EDB824',
                 border: '1px solid #EDB824',
-                color: '#010124',
+                color: saveState === 'queued' ? '#EDB824' : '#010124',
                 borderRadius: '4px',
                 padding: '6px 8px',
                 fontSize: '10px',
@@ -536,7 +679,7 @@ export default function MatchScoutingPage() {
                 letterSpacing: '0.2px',
               }}
             >
-              GUARDADO ✓
+              {saveState === 'queued' ? 'EN COLA ✓' : 'GUARDADO ✓'}
             </div>
           ) : (
             <button
@@ -1159,23 +1302,23 @@ export default function MatchScoutingPage() {
             )}
 
             {/* Botón Principal de Guardar al finalizar Endgame */}
-            {saveState === 'saved' ? (
+            {saveState === 'saved' || saveState === 'queued' ? (
               <div
                 role="status"
                 aria-live="polite"
                 className="dock-pill-btn mono-tabular save-success-pulse"
                 style={{
                   marginTop: '14px',
-                  background: '#EDB824',
+                  background: saveState === 'queued' ? '#451F66' : '#EDB824',
                   border: '2px solid #EDB824',
                   borderRadius: '4px',
-                  color: '#010124',
+                  color: saveState === 'queued' ? '#EDB824' : '#010124',
                   fontWeight: 900,
                   fontSize: '15px',
                   padding: '15px 20px',
                 }}
               >
-                GUARDADO ✓
+                {saveState === 'queued' ? 'EN COLA ✓' : 'GUARDADO ✓'}
               </div>
             ) : (
               <button
@@ -1449,6 +1592,165 @@ export default function MatchScoutingPage() {
           </div>
         </div>
       )}
+      {/* Modal de Cola Offline */}
+      {showQueueModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(1, 1, 20, 0.84)',
+            zIndex: 250,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={() => setShowQueueModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              background: '#04042B',
+              border: '2px solid #451F66',
+              borderRadius: '6px',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '1px solid #451F66',
+                paddingBottom: '10px',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>
+                  Cola Offline ({queuedMatches.length})
+                </div>
+                <div
+                  className="mono-tabular"
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: isOnline ? '#10B981' : '#FCA5A5',
+                  }}
+                >
+                  {isOnline ? 'En línea • Listo para sincronizar' : 'Sin conexión • Se enviará al reconectar'}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQueueModal(false)}
+                className="header-action-icon"
+                style={{ width: '32px', height: '32px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <button
+              type="button"
+              disabled={syncingQueue || queuedMatches.length === 0}
+              onClick={() => handleSyncQueue(false)}
+              className="dock-pill-btn mono-tabular"
+              style={{
+                background: queuedMatches.length > 0 ? '#EDB824' : '#070733',
+                borderColor: queuedMatches.length > 0 ? '#EDB824' : '#451F66',
+                color: queuedMatches.length > 0 ? '#010124' : 'var(--nautilus-gray)',
+                fontWeight: 800,
+                padding: '12px 14px',
+                opacity: syncingQueue ? 0.7 : 1,
+              }}
+            >
+              {syncingQueue
+                ? 'Sincronizando...'
+                : `Sincronizar ahora (${queuedMatches.length})`}
+            </button>
+
+            {queuedMatches.length === 0 ? (
+              <div
+                style={{
+                  background: '#070733',
+                  border: '1px solid #451F66',
+                  borderRadius: '4px',
+                  padding: '18px 12px',
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  color: 'var(--nautilus-gray)',
+                }}
+              >
+                No hay partidos pendientes en la cola local.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {queuedMatches.map((item) => (
+                  <div
+                    key={item.queueId}
+                    style={{
+                      background: '#070733',
+                      border: '1px solid #451F66',
+                      borderRadius: '4px',
+                      padding: '10px 12px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '10px',
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div className="mono-tabular" style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF' }}>
+                        M#{item.payload.match} • #{item.payload.team} • {item.payload.alliance}
+                      </div>
+                      <div className="mono-tabular" style={{ fontSize: '10px', color: 'var(--nautilus-gray)', marginTop: '2px' }}>
+                        {item.capturedAt}
+                      </div>
+                      {item.lastError && (
+                        <div style={{ fontSize: '10px', color: '#FCA5A5', marginTop: '3px' }}>
+                          Último estado: {item.lastError}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = removeFromScoutQueue(item.queueId);
+                        setQueuedMatches(next);
+                        showToast(`M#${item.payload.match} eliminado de cola`);
+                      }}
+                      aria-label={`Descartar Match ${item.payload.match} de la cola`}
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '4px',
+                        background: '#010124',
+                        border: '1px solid #EF4444',
+                        color: '#FCA5A5',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Barra inferior de fases del Match: Autónomo / TeleOp / Endgame */}
       <nav className="bottom-nav" aria-label="Fases del Match">
         <button

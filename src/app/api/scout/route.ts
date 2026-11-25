@@ -5,7 +5,10 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
 
-    const timestamp = new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey' });
+    const timestamp =
+      typeof data.timestamp === 'string' && data.timestamp.trim()
+        ? data.timestamp.trim()
+        : new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey' });
 
     const notesText = data.notes
       ? `${data.notes} ${data.tags && data.tags.length ? '[' + data.tags.join(', ') + ']' : ''}`.trim()
