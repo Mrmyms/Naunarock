@@ -67,6 +67,86 @@ export async function appendScoutRow(sheetName: string, rowValues: any[]) {
   return response.data;
 }
 
+const ensuredSheets = new Set<string>();
+
+export async function ensureSheetWithHeaders(sheetName: string, headers: string[]) {
+  if (ensuredSheets.has(sheetName)) return;
+
+  const { sheets, sheetId } = getGoogleSheetsClient();
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId: sheetId,
+    fields: 'sheets.properties.title',
+  });
+
+  const exists = meta.data.sheets?.some((s) => s.properties?.title === sheetName);
+  if (!exists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: sheetName,
+              },
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  const headerCheck = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: `${sheetName}!1:1`,
+  });
+
+  const firstRow = headerCheck.data.values?.[0];
+  if (!firstRow || firstRow.length === 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range: `${sheetName}!A1`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [headers],
+      },
+    });
+  }
+
+  ensuredSheets.add(sheetName);
+}
+
+export async function appendRows(
+  sheetName: string,
+  rows: (string | number)[][],
+  valueInputOption: 'USER_ENTERED' | 'RAW' = 'USER_ENTERED'
+) {
+  const { sheets, sheetId } = getGoogleSheetsClient();
+
+  const response = await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: `${sheetName}!A1`,
+    valueInputOption,
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: rows,
+    },
+  });
+
+  return response.data;
+}
+
+export async function batchGetSheetRanges(ranges: string[]) {
+  const { sheets, sheetId } = getGoogleSheetsClient();
+
+  const response = await sheets.spreadsheets.values.batchGet({
+    spreadsheetId: sheetId,
+    ranges,
+  });
+
+  return response.data.valueRanges || [];
+}
+
 export async function getSheetRows(sheetName: string, range = 'A1:AE1000') {
   const { sheets, sheetId } = getGoogleSheetsClient();
 

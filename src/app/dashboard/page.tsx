@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import NautilusNavMenu from '@/components/NautilusNavMenu';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,11 @@ export default function DashboardPage() {
   }, []);
 
   // Aggregated team stats
-  const teamStats: Record<string, { team: number; count: number; totalNet: number; totalBalancin: number; totalFlor: number; totalFouls: number }> = {};
+  const teamStats: Record<
+    string,
+    { team: number; count: number; totalNet: number; totalBalancin: number; totalFlor: number; totalFouls: number }
+  > = {};
+
   matches.forEach((m) => {
     const t = m['Equipo #'] || m['EQUIPO'] || m.team;
     if (!t) return;
@@ -51,10 +56,10 @@ export default function DashboardPage() {
       Number(m['TELE FLOR POLLEN'] ?? m['TeleOp Flor Polen'] ?? 0) +
       Number(m['TELE FLOR NÉCTAR'] ?? m['TeleOp Flor Néctar'] ?? 0);
 
-    const autoScore = Number(m['Auto Pts'] ?? 0);
-    const teleScore = Number(m['TeleOp Pts'] ?? 0);
-    const fouls = Number(m['Faltas Pts'] ?? 0);
-    const net = Number(m['Puntos Netos'] ?? (autoScore + teleScore - fouls));
+    const autoScore = Number(m['Auto Pts'] ?? m['AUTO PTS'] ?? 0);
+    const teleScore = Number(m['TeleOp Pts'] ?? m['TELEOP PTS'] ?? 0);
+    const fouls = Number(m['Faltas Pts'] ?? m['FALTAS PTS'] ?? 0);
+    const net = Number(m['Puntos Netos'] ?? m['PUNTOS NETOS'] ?? (autoScore + teleScore - fouls));
 
     teamStats[t].totalNet += net;
     teamStats[t].totalBalancin += autoBalancin + teleBalancin;
@@ -65,146 +70,195 @@ export default function DashboardPage() {
   const rankedTeams = Object.values(teamStats).sort((a, b) => b.totalNet / b.count - a.totalNet / a.count);
 
   return (
-    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* Top Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--nautilus-white)', margin: 0, letterSpacing: '0.5px' }}>
-            TELEMETRÍA EN VIVO
-          </h1>
-          <span style={{ fontSize: '11px', color: 'var(--nautilus-gold)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Nautilus 4010 • Google Sheets
-          </span>
-        </div>
+    <>
+      {/* Header Nautilus Telemetría */}
+      <div className="fintech-header" style={{ gap: '8px' }}>
+        <NautilusNavMenu />
+
         <button
+          type="button"
           onClick={fetchMatches}
           disabled={loading}
-          className="btn-duo btn-duo-gold"
+          className="dock-pill-btn mono-tabular"
           style={{
-            padding: '8px 14px',
+            flex: 'none',
+            padding: '6px 10px',
             fontSize: '11px',
-            borderRadius: '10px',
-            borderBottomWidth: '3px',
+            background: '#451F66',
+            borderColor: '#EDB824',
+            color: '#FFFFFF',
+            borderRadius: '4px',
+            opacity: loading ? 0.7 : 1,
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EDB824" strokeWidth="2.4">
             <polyline points="23 4 23 10 17 10" />
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
           </svg>
-          <span>{loading ? 'CARGANDO...' : 'ACTUALIZAR'}</span>
+          <span>{loading ? 'Cargando...' : 'Actualizar'}</span>
         </button>
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: '#3A1515',
-            border: '2px solid var(--alliance-red)',
-            borderBottom: '4px solid var(--alliance-red-shadow)',
-            padding: '12px 14px',
-            borderRadius: '12px',
-            color: '#FCA5A5',
-            fontSize: '12px',
-            fontWeight: 700,
-          }}
-        >
-          [Error de conexión]: {error}
-        </div>
-      )}
-
-      {/* KPI Cards (Chunky Duolingo 3D style) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <div className="card-duo">
-          <span style={{ fontSize: '10px', color: 'var(--nautilus-gold)', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.5px' }}>
-            Matches Registrados
-          </span>
-          <h2 style={{ fontSize: '32px', fontWeight: 900, marginTop: '2px', color: 'var(--nautilus-white)' }}>
-            {matches.length}
-          </h2>
-        </div>
-        <div className="card-duo">
-          <span style={{ fontSize: '10px', color: 'var(--nautilus-gold)', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.5px' }}>
-            Equipos Evaluados
-          </span>
-          <h2 style={{ fontSize: '32px', fontWeight: 900, marginTop: '2px', color: 'var(--nautilus-white)' }}>
-            {rankedTeams.length}
-          </h2>
-        </div>
+      {/* Título de Sección */}
+      <div style={{ marginBottom: '12px' }}>
+        <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', margin: 0, letterSpacing: '0.3px' }}>
+          TELEMETRÍA EN VIVO
+        </h1>
+        <span className="mono-tabular" style={{ fontSize: '11px', color: '#EDB824', fontWeight: 700, textTransform: 'uppercase' }}>
+          Nautilus 4010 • Google Sheets (Captura_BIOBUZZ)
+        </span>
       </div>
 
-      {/* EPA Rankings Table */}
-      <div>
-        <h3 style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--nautilus-gold)', marginBottom: '8px', letterSpacing: '0.5px' }}>
-          Ranking por EPA Promedio (BIOBUZZ)
-        </h3>
-        <div
-          className="card-duo"
-          style={{
-            padding: 0,
-            overflow: 'hidden',
-          }}
-        >
-          {rankedTeams.length === 0 ? (
-            <div style={{ padding: '28px', textAlign: 'center', color: 'var(--nautilus-gray)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Sin registros en la base de datos. Completa un formulario en la sección Match.
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {error && (
+          <div
+            className="mono-tabular"
+            style={{
+              background: 'rgba(239, 68, 68, 0.14)',
+              border: '1px solid #EF4444',
+              borderRadius: '4px',
+              padding: '10px 12px',
+              color: '#FCA5A5',
+              fontSize: '12px',
+              fontWeight: 700,
+            }}
+          >
+            Error de conexión: {error}
+          </div>
+        )}
+
+        {/* KPI Cards (Estilo plano Nautilus) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div className="fintech-kpi-card" style={{ borderRadius: '4px', padding: '14px' }}>
+            <div className="fintech-kpi-header" style={{ marginBottom: '6px' }}>
+              <span
+                className="fintech-kpi-title"
+                style={{ fontSize: '10px', color: '#EDB824', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.5px' }}
+              >
+                Matches Registrados
+              </span>
             </div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
-              <thead>
-                <tr
-                  style={{
-                    borderBottom: '2px solid var(--nautilus-navy-card-border)',
-                    color: 'var(--nautilus-gold)',
-                    background: '#1A2342',
-                    textTransform: 'uppercase',
-                    fontSize: '10px',
-                    fontWeight: 900,
-                    letterSpacing: '0.5px',
-                  }}
-                >
-                  <th style={{ padding: '12px 14px' }}>Pos</th>
-                  <th style={{ padding: '12px 8px' }}>Equipo</th>
-                  <th style={{ padding: '12px 8px' }}>PJ</th>
-                  <th style={{ padding: '12px 8px' }}>Bal/Flor</th>
-                  <th style={{ padding: '12px 14px', textAlign: 'right' }}>EPA Prom</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rankedTeams.map((team, idx) => {
-                  const avgNet = (team.totalNet / team.count).toFixed(1);
-                  const avgBal = (team.totalBalancin / team.count).toFixed(1);
-                  const avgFlor = (team.totalFlor / team.count).toFixed(1);
-                  return (
-                    <tr
-                      key={team.team}
-                      style={{
-                        borderBottom: '1px solid var(--nautilus-navy-card-border)',
-                        background: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.02)',
-                      }}
-                    >
-                      <td style={{ padding: '12px 14px', fontWeight: 900, color: idx === 0 ? 'var(--nautilus-gold)' : 'var(--nautilus-gray)' }}>
-                        {idx + 1}
-                      </td>
-                      <td style={{ padding: '12px 8px', fontWeight: 900, color: 'white' }}>
-                        #{team.team}
-                      </td>
-                      <td style={{ padding: '12px 8px', color: 'var(--nautilus-gray)', fontWeight: 700 }}>
-                        {team.count}
-                      </td>
-                      <td style={{ padding: '12px 8px', color: 'var(--nautilus-gold)', fontWeight: 800 }}>
-                        {avgBal} / {avgFlor}
-                      </td>
-                      <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 900, color: 'var(--nautilus-gold)' }}>
-                        {avgNet}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+            <div className="fintech-kpi-value mono-tabular" style={{ fontSize: '30px', marginBottom: 0 }}>
+              {matches.length}
+            </div>
+          </div>
+
+          <div className="fintech-kpi-card" style={{ borderRadius: '4px', padding: '14px' }}>
+            <div className="fintech-kpi-header" style={{ marginBottom: '6px' }}>
+              <span
+                className="fintech-kpi-title"
+                style={{ fontSize: '10px', color: '#EDB824', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.5px' }}
+              >
+                Equipos Evaluados
+              </span>
+            </div>
+            <div className="fintech-kpi-value mono-tabular" style={{ fontSize: '30px', marginBottom: 0 }}>
+              {rankedTeams.length}
+            </div>
+          </div>
+        </div>
+
+        {/* EPA Rankings Table */}
+        <div>
+          <h3
+            style={{
+              fontSize: '11px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              color: '#EDB824',
+              marginBottom: '8px',
+              letterSpacing: '0.6px',
+            }}
+          >
+            Ranking por EPA Promedio (BIOBUZZ)
+          </h3>
+
+          <div
+            style={{
+              background: '#070733',
+              border: '1px solid #451F66',
+              borderRadius: '4px',
+              overflow: 'hidden',
+            }}
+          >
+            {rankedTeams.length === 0 ? (
+              <div
+                style={{
+                  padding: '28px 16px',
+                  textAlign: 'center',
+                  color: 'var(--nautilus-gray)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}
+              >
+                {loading
+                  ? 'Consultando registros en Google Sheets...'
+                  : 'Sin registros en la base de datos. Completa un formulario en Match Scouting.'}
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                <thead>
+                  <tr
+                    style={{
+                      borderBottom: '1px solid #451F66',
+                      color: '#EDB824',
+                      background: '#04042B',
+                      textTransform: 'uppercase',
+                      fontSize: '10px',
+                      fontWeight: 800,
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    <th style={{ padding: '10px 12px' }}>Pos</th>
+                    <th style={{ padding: '10px 8px' }}>Equipo</th>
+                    <th style={{ padding: '10px 8px' }}>PJ</th>
+                    <th style={{ padding: '10px 8px' }}>Bal/Flor</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>EPA Prom</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rankedTeams.map((team, idx) => {
+                    const avgNet = (team.totalNet / team.count).toFixed(1);
+                    const avgBal = (team.totalBalancin / team.count).toFixed(1);
+                    const avgFlor = (team.totalFlor / team.count).toFixed(1);
+                    return (
+                      <tr
+                        key={team.team}
+                        style={{
+                          borderBottom: idx === rankedTeams.length - 1 ? 'none' : '1px solid rgba(69, 31, 102, 0.6)',
+                          background: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.02)',
+                        }}
+                      >
+                        <td
+                          className="mono-tabular"
+                          style={{ padding: '11px 12px', fontWeight: 800, color: idx === 0 ? '#EDB824' : 'var(--nautilus-gray)' }}
+                        >
+                          {idx + 1}
+                        </td>
+                        <td className="mono-tabular" style={{ padding: '11px 8px', fontWeight: 800, color: '#FFFFFF' }}>
+                          #{team.team}
+                        </td>
+                        <td className="mono-tabular" style={{ padding: '11px 8px', color: 'var(--nautilus-gray)', fontWeight: 700 }}>
+                          {team.count}
+                        </td>
+                        <td className="mono-tabular" style={{ padding: '11px 8px', color: '#FFFFFF', fontWeight: 700 }}>
+                          {avgBal} / {avgFlor}
+                        </td>
+                        <td
+                          className="mono-tabular"
+                          style={{ padding: '11px 12px', textAlign: 'right', fontWeight: 800, color: '#EDB824' }}
+                        >
+                          {avgNet}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
