@@ -258,7 +258,7 @@ export default function PitScoutingPage() {
 
       for (let i = 0; i < photos.length; i++) {
         const photo = photos[i];
-        setSaveProgress(`Leyendo foto ${i + 1}/${photos.length} sin comprimir...`);
+        setSaveProgress(`Leyendo foto ${i + 1}/${photos.length}...`);
         const { mimeType, base64 } = await readFileAsRawBase64(photo.file);
 
         const chunks: string[] = [];
@@ -926,14 +926,9 @@ export default function PitScoutingPage() {
 
             {/* 5. FOTOS DEL ROBOT (MÚLTIPLES, SIN COMPRIMIR) */}
             <div className="open-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: '#EDB824', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                  E. Fotos del Robot ({photos.length})
-                </span>
-                <span className="mono-tabular" style={{ fontSize: '10px', color: 'var(--nautilus-gray)' }}>
-                  Original sin comprimir
-                </span>
-              </div>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#EDB824', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                E. Fotos del Robot ({photos.length})
+              </span>
 
               {/* Inputs ocultos */}
               <input
