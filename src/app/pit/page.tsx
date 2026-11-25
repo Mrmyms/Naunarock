@@ -7,6 +7,7 @@ const SCOUTER_STORAGE_KEY = 'nautilus_4010_scouter_v1';
 const CHUNK_SIZE = 45000;
 const MAX_CHUNKS_PER_REQ = 35;
 
+const ROBOT_TYPE_OPTIONS = ['Torreta', 'Dumper', 'Shooter fijo', 'Brazo / Elevador', 'Defensa / Pushbot', 'Híbrido'] as const;
 const CHASSIS_OPTIONS = ['Mecanum', 'Swerve', 'Tank (6WD/8WD)', 'X-Drive', 'Otro'] as const;
 const INTAKE_OPTIONS = ['Rodillos Compliant', 'Bumper Activo', 'Pinza/Garra', 'Por Gravedad', 'Otro'] as const;
 const CAPACITY_OPTIONS = ['1 pieza (Single)', '2 piezas', '3+ piezas'] as const;
@@ -46,6 +47,7 @@ type SavedPitEntry = {
   ROL_PREFERIDO?: string;
   NOTAS?: string;
   FOTOS_COUNT?: string | number;
+  TIPO_ROBOT?: string;
   photoIds?: string[];
 };
 
@@ -85,6 +87,7 @@ export default function PitScoutingPage() {
   const [scouter, setScouter] = useState<string>('');
 
   // Hardware & Mecánica
+  const [robotType, setRobotType] = useState<string>('Torreta');
   const [chassisType, setChassisType] = useState<string>('Mecanum');
   const [weight, setWeight] = useState<string>('');
   const [intakeType, setIntakeType] = useState<string>('Rodillos Compliant');
@@ -216,6 +219,7 @@ export default function PitScoutingPage() {
   const handleResetTeamFields = () => {
     setTeamNumber('');
     setTeamName('');
+    setRobotType('Torreta');
     setChassisType('Mecanum');
     setWeight('');
     setIntakeType('Rodillos Compliant');
@@ -313,6 +317,7 @@ export default function PitScoutingPage() {
           teamNumber: parsedTeam,
           teamName: teamName.trim(),
           scouter: scouter.trim(),
+          robotType,
           chassisType,
           weight: weight.trim() === '' ? '' : Number(weight),
           intakeType,
@@ -491,7 +496,7 @@ export default function PitScoutingPage() {
                           #{entry.EQUIPO || '?'} {entry.NOMBRE_EQUIPO ? `• ${entry.NOMBRE_EQUIPO}` : ''}
                         </div>
                         <div style={{ fontSize: '11px', color: 'var(--nautilus-gray)', marginTop: '2px' }}>
-                          {entry.CHASIS || '—'} • {entry.ROL_PREFERIDO || '—'}
+                          {entry.TIPO_ROBOT ? `${entry.TIPO_ROBOT} • ` : ''}{entry.CHASIS || '—'} • {entry.ROL_PREFERIDO || '—'}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
@@ -679,6 +684,24 @@ export default function PitScoutingPage() {
               <span style={{ fontSize: '11px', fontWeight: 800, color: '#EDB824', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                 B. Hardware &amp; Mecánica
               </span>
+
+              <div>
+                <span className="input-duo-label" style={{ display: 'block', marginBottom: '6px' }}>
+                  Tipo de Robot
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                  {ROBOT_TYPE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setRobotType(opt)}
+                      className={`btn-chip-duo ${robotType === opt ? 'selected' : ''}`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div>
                 <span className="input-duo-label" style={{ display: 'block', marginBottom: '6px' }}>

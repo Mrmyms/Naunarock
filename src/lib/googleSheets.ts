@@ -102,7 +102,7 @@ export async function ensureSheetWithHeaders(sheetName: string, headers: string[
   });
 
   const firstRow = headerCheck.data.values?.[0];
-  if (!firstRow || firstRow.length === 0) {
+  if (!firstRow || firstRow.length < headers.length) {
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
       range: `${sheetName}!A1`,

@@ -49,7 +49,7 @@ Cada partido es cubierto por **4 scouters** (2 alianza azul y 2 alianza roja), s
 
 ---
 
-## 2. Pit Scouting — Hoja `Pit_BIOBUZZ` (`A:S`, 19 columnas)
+## 2. Pit Scouting — Hoja `Pit_BIOBUZZ` (`A:T`, 20 columnas)
 
 Se registra en `/pit` para documentar las capacidades mecánicas, software y fotos de cada equipo.
 
@@ -74,6 +74,7 @@ Se registra en `/pit` para documentar las capacidades mecánicas, software y fot
 | `Q` | `NOTAS` | Texto libre de observaciones en pits. |
 | `R` | `FOTOS_COUNT` | Entero (cantidad de fotos asociadas). |
 | `S` | `FOTOS_IDS` | Lista separada por comas de `PHOTO_ID` en `Pit_Fotos`. |
+| `T` | `TIPO_ROBOT` | `Torreta`, `Dumper`, `Shooter fijo`, `Brazo / Elevador`, `Defensa / Pushbot`, `Híbrido`. |
 
 ### Almacenamiento de Fotos — Hoja `Pit_Fotos` (`A:J`, 10 columnas)
 
