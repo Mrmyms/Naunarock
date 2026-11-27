@@ -2,9 +2,27 @@ import { NextResponse } from 'next/server';
 
 const FTCSCOUT_GRAPHQL_URL = 'https://api.ftcscout.org/graphql';
 
+type FTCScoutEventSummary = {
+  code: string;
+  name: string;
+  regionCode: string;
+  start: string;
+};
+
 const SEARCH_EVENTS_QUERY = `
   query SearchEvents($season: Int!, $searchText: String, $region: RegionOption, $limit: Int) {
     eventsSearch(season: $season, searchText: $searchText, region: $region, limit: $limit) {
+      code
+      name
+      regionCode
+      start
+    }
+  }
+`;
+
+const EVENT_SUMMARY_BY_CODE_QUERY = `
+  query EventSummary($season: Int!, $code: String!) {
+    eventByCode(season: $season, code: $code) {
       code
       name
       regionCode
@@ -35,6 +53,14 @@ const EVENT_BY_CODE_QUERY = `
   }
 `;
 
+function normalizeText(str: string): string {
+  return str
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
 async function queryFTCScout(query: string, variables: Record<string, unknown>) {
   const res = await fetch(FTCSCOUT_GRAPHQL_URL, {
     method: 'POST',
@@ -54,6 +80,29 @@ async function queryFTCScout(query: string, variables: Record<string, unknown>) 
   return json.data;
 }
 
+async function safeEventSummaryByCode(
+  season: number,
+  code: string
+): Promise<FTCScoutEventSummary | null> {
+  try {
+    const data = await queryFTCScout(EVENT_SUMMARY_BY_CODE_QUERY, { season, code });
+    return data?.eventByCode || null;
+  } catch {
+    return null;
+  }
+}
+
+function dedupeEvents(list: FTCScoutEventSummary[]): FTCScoutEventSummary[] {
+  const seen = new Set<string>();
+  const result: FTCScoutEventSummary[] = [];
+  for (const ev of list) {
+    if (!ev?.code || seen.has(ev.code)) continue;
+    seen.add(ev.code);
+    result.push(ev);
+  }
+  return result;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -61,18 +110,74 @@ export async function GET(request: Request) {
     const season = parseInt(searchParams.get('season') || '2026', 10);
 
     if (action === 'search') {
-      const q = searchParams.get('q')?.trim() || undefined;
-      const region = searchParams.get('region')?.trim() || undefined;
-      const data = await queryFTCScout(SEARCH_EVENTS_QUERY, {
-        season,
-        searchText: q,
-        region: region || null,
-        limit: 15,
-      });
+      const q = searchParams.get('q')?.trim() || '';
+      const rawRegion = searchParams.get('region')?.trim().toUpperCase() || '';
+      const region = rawRegion && rawRegion !== 'ALL' ? rawRegion : '';
+      const looksLikeCode = /^[A-Za-z0-9_-]{3,16}$/.test(q);
+      const qNorm = normalizeText(q);
+
+      if (region) {
+        const [regionData, exactEvent] = await Promise.all([
+          queryFTCScout(SEARCH_EVENTS_QUERY, {
+            season,
+            searchText: null,
+            region,
+            limit: 50,
+          }),
+          looksLikeCode ? safeEventSummaryByCode(season, q.toUpperCase()) : Promise.resolve(null),
+        ]);
+
+        const regionEvents: FTCScoutEventSummary[] = (regionData?.eventsSearch || [])
+          .slice()
+          .sort((a: FTCScoutEventSummary, b: FTCScoutEventSummary) =>
+            String(a.start || '').localeCompare(String(b.start || ''))
+          );
+
+        const filtered = qNorm
+          ? regionEvents.filter((ev) => {
+              const haystack = normalizeText(`${ev.code} ${ev.name} ${ev.regionCode}`);
+              return haystack.includes(qNorm);
+            })
+          : regionEvents;
+
+        const combined = dedupeEvents([
+          ...(exactEvent ? [exactEvent] : []),
+          ...filtered,
+        ]);
+
+        return NextResponse.json({
+          success: true,
+          events: combined,
+        });
+      }
+
+      const [globalData, exactEvent, mxData] = await Promise.all([
+        queryFTCScout(SEARCH_EVENTS_QUERY, {
+          season,
+          searchText: q || null,
+          region: null,
+          limit: 20,
+        }),
+        looksLikeCode ? safeEventSummaryByCode(season, q.toUpperCase()) : Promise.resolve(null),
+        qNorm === 'mexico'
+          ? queryFTCScout(SEARCH_EVENTS_QUERY, {
+              season,
+              searchText: null,
+              region: 'MX',
+              limit: 50,
+            })
+          : Promise.resolve(null),
+      ]);
+
+      const combined = dedupeEvents([
+        ...(exactEvent ? [exactEvent] : []),
+        ...(mxData?.eventsSearch || []),
+        ...(globalData?.eventsSearch || []),
+      ]);
 
       return NextResponse.json({
         success: true,
-        events: data.eventsSearch || [],
+        events: combined,
       });
     }
 
@@ -113,4 +218,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

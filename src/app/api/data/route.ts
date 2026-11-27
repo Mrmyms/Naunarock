@@ -9,8 +9,10 @@ import {
   ALL_EVENTS_KEY,
   DEFAULT_EVENT_KEY,
   MATCH_SHEET_PREFIX,
+  PIT_SHEET_PREFIX,
   extractAvailableEvents,
   getMatchSheetName,
+  mergeAvailableEvents,
   normalizeEventCode,
 } from '@/lib/events';
 
@@ -39,9 +41,19 @@ function mapRowsToMatches(rows: any[][], eventCode: string, sheetName: string, s
 
 export async function GET(request: Request) {
   try {
-    const rawEvent = new URL(request.url).searchParams.get('event')?.trim();
+    const { searchParams } = new URL(request.url);
+    const listOnly = searchParams.get('listOnly') === '1';
+    const rawEvent = searchParams.get('event')?.trim();
     const titles = await listSheetTitles();
     const availableEvents = extractAvailableEvents(titles, MATCH_SHEET_PREFIX);
+
+    if (listOnly) {
+      const pitEvents = extractAvailableEvents(titles, PIT_SHEET_PREFIX);
+      return NextResponse.json({
+        success: true,
+        availableEvents: mergeAvailableEvents(availableEvents, pitEvents, MATCH_SHEET_PREFIX),
+      });
+    }
 
     if (rawEvent && rawEvent.toUpperCase() === ALL_EVENTS_KEY) {
       if (availableEvents.length === 0) {

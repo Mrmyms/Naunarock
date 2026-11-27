@@ -7,7 +7,7 @@ import BiobuzzFieldSelector, {
 } from '@/components/BiobuzzFieldSelector';
 import NautilusNavMenu from '@/components/NautilusNavMenu';
 import EventManagerModal from '@/components/EventManagerModal';
-import { getMatchSheetName } from '@/lib/events';
+import { AvailableSheetEvent, getMatchSheetName } from '@/lib/events';
 import {
   SavedEventSession,
   StationLock,
@@ -155,6 +155,7 @@ export default function MatchScoutingPage() {
   // Eventos simultáneos y Schedule (FTCScout / Manual)
   const [savedEvents, setSavedEvents] = useState<SavedEventSession[]>([]);
   const [activeEventCode, setActiveEventCode] = useState<string>('');
+  const [availableSheetEvents, setAvailableSheetEvents] = useState<AvailableSheetEvent[]>([]);
   const [showEventModal, setShowEventModal] = useState(false);
   const isStoreHydratedRef = useRef(false);
 
@@ -267,6 +268,18 @@ export default function MatchScoutingPage() {
     }
   };
 
+  const fetchAvailableSheetEvents = async () => {
+    try {
+      const res = await fetch('/api/data?listOnly=1');
+      const json = await res.json();
+      if (res.ok && json.success && Array.isArray(json.availableEvents)) {
+        setAvailableSheetEvents(json.availableEvents);
+      }
+    } catch {
+      // ignore offline or network errors
+    }
+  };
+
   // Cargar eventos, scouter y cola offline guardados en localStorage al iniciar
   useEffect(() => {
     try {
@@ -313,8 +326,11 @@ export default function MatchScoutingPage() {
 
     const onlineNow = typeof navigator !== 'undefined' ? navigator.onLine : true;
     setIsOnline(onlineNow);
-    if (onlineNow && initialQueue.length > 0) {
-      void handleSyncQueue(true);
+    if (onlineNow) {
+      void fetchAvailableSheetEvents();
+      if (initialQueue.length > 0) {
+        void handleSyncQueue(true);
+      }
     }
 
     const onOnline = () => {
@@ -336,6 +352,13 @@ export default function MatchScoutingPage() {
       if (savedResetTimerRef.current) clearTimeout(savedResetTimerRef.current);
     };
   }, []);
+
+  // Refrescar eventos existentes en Sheets al abrir el modal
+  useEffect(() => {
+    if (showEventModal && isOnline) {
+      void fetchAvailableSheetEvents();
+    }
+  }, [showEventModal, isOnline]);
 
   // Persistir número de match por evento activo
   useEffect(() => {
@@ -1439,6 +1462,7 @@ export default function MatchScoutingPage() {
         sheetPreviewPrefix="Captura_BIOBUZZ"
         showStationLock={true}
         lockedStation={lockedStation}
+        availableSheetEvents={availableSheetEvents}
         onSelectEvent={handleSelectEvent}
         onAddOrUpdateEvent={handleAddOrUpdateEvent}
         onRemoveEvent={handleRemoveEvent}
