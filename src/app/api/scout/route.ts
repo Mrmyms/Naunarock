@@ -1,9 +1,23 @@
 import { NextResponse } from 'next/server';
-import { appendScoutRow } from '@/lib/googleSheets';
+import {
+  appendScoutRow,
+  ensureSheetWithHeaders,
+  invalidateEnsuredSheet,
+} from '@/lib/googleSheets';
+import {
+  SCOUT_HEADERS,
+  getMatchSheetName,
+  normalizeEventCode,
+} from '@/lib/events';
+
+export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+
+    const eventCode = normalizeEventCode(data?.eventCode ?? data?.event);
+    const sheetName = getMatchSheetName(eventCode);
 
     const timestamp =
       typeof data.timestamp === 'string' && data.timestamp.trim()
@@ -54,10 +68,26 @@ export async function POST(request: Request) {
       Number(data.netScore ?? 0),               // AE: Puntos Netos
     ];
 
-    const result = await appendScoutRow('Captura_BIOBUZZ', row);
+    await ensureSheetWithHeaders(sheetName, SCOUT_HEADERS);
+
+    let result;
+    try {
+      result = await appendScoutRow(sheetName, row);
+    } catch (err: any) {
+      const msg = String(err?.message || '');
+      if (msg.includes('Unable to parse range')) {
+        invalidateEnsuredSheet(sheetName);
+        await ensureSheetWithHeaders(sheetName, SCOUT_HEADERS);
+        result = await appendScoutRow(sheetName, row);
+      } else {
+        throw err;
+      }
+    }
 
     return NextResponse.json({
       success: true,
+      eventCode,
+      sheetName,
       updatedRange: result.updates?.updatedRange,
     });
   } catch (error: any) {

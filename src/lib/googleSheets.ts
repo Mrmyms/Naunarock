@@ -51,12 +51,31 @@ export function getGoogleSheetsClient() {
   };
 }
 
+export function formatSheetRange(sheetName: string, range: string): string {
+  const escaped = sheetName.replace(/'/g, "''");
+  return `'${escaped}'!${range}`;
+}
+
+export async function listSheetTitles(): Promise<string[]> {
+  const { sheets, sheetId } = getGoogleSheetsClient();
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId: sheetId,
+    fields: 'sheets.properties.title',
+  });
+
+  return (
+    meta.data.sheets
+      ?.map((s) => s.properties?.title)
+      .filter((t): t is string => typeof t === 'string' && t.length > 0) || []
+  );
+}
+
 export async function appendScoutRow(sheetName: string, rowValues: any[]) {
   const { sheets, sheetId } = getGoogleSheetsClient();
 
   const response = await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: `${sheetName}!A1`,
+    range: formatSheetRange(sheetName, 'A1'),
     valueInputOption: 'USER_ENTERED',
     insertDataOption: 'INSERT_ROWS',
     requestBody: {
@@ -68,52 +87,75 @@ export async function appendScoutRow(sheetName: string, rowValues: any[]) {
 }
 
 const ensuredSheets = new Set<string>();
+const ensuringSheets = new Map<string, Promise<void>>();
+
+export function invalidateEnsuredSheet(sheetName: string): void {
+  ensuredSheets.delete(sheetName);
+}
 
 export async function ensureSheetWithHeaders(sheetName: string, headers: string[]) {
   if (ensuredSheets.has(sheetName)) return;
 
-  const { sheets, sheetId } = getGoogleSheetsClient();
-  const meta = await sheets.spreadsheets.get({
-    spreadsheetId: sheetId,
-    fields: 'sheets.properties.title',
-  });
+  const inflight = ensuringSheets.get(sheetName);
+  if (inflight) {
+    return inflight;
+  }
 
-  const exists = meta.data.sheets?.some((s) => s.properties?.title === sheetName);
-  if (!exists) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: sheetId,
-      requestBody: {
-        requests: [
-          {
-            addSheet: {
-              properties: {
-                title: sheetName,
+  const run = (async () => {
+    const { sheets, sheetId } = getGoogleSheetsClient();
+    const titles = await listSheetTitles();
+
+    const exists = titles.includes(sheetName);
+    if (!exists) {
+      try {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: sheetId,
+          requestBody: {
+            requests: [
+              {
+                addSheet: {
+                  properties: {
+                    title: sheetName,
+                  },
+                },
               },
-            },
+            ],
           },
-        ],
-      },
-    });
-  }
+        });
+      } catch (err: any) {
+        const msg = String(err?.message || '').toLowerCase();
+        if (!msg.includes('already exists')) {
+          throw err;
+        }
+      }
+    }
 
-  const headerCheck = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range: `${sheetName}!1:1`,
-  });
-
-  const firstRow = headerCheck.data.values?.[0];
-  if (!firstRow || firstRow.length < headers.length) {
-    await sheets.spreadsheets.values.update({
+    const headerCheck = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${sheetName}!A1`,
-      valueInputOption: 'RAW',
-      requestBody: {
-        values: [headers],
-      },
+      range: formatSheetRange(sheetName, '1:1'),
     });
-  }
 
-  ensuredSheets.add(sheetName);
+    const firstRow = headerCheck.data.values?.[0];
+    if (!firstRow || firstRow.length < headers.length) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: formatSheetRange(sheetName, 'A1'),
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [headers],
+        },
+      });
+    }
+
+    ensuredSheets.add(sheetName);
+  })();
+
+  ensuringSheets.set(sheetName, run);
+  try {
+    await run;
+  } finally {
+    ensuringSheets.delete(sheetName);
+  }
 }
 
 export async function appendRows(
@@ -125,7 +167,7 @@ export async function appendRows(
 
   const response = await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: `${sheetName}!A1`,
+    range: formatSheetRange(sheetName, 'A1'),
     valueInputOption,
     insertDataOption: 'INSERT_ROWS',
     requestBody: {
@@ -147,12 +189,12 @@ export async function batchGetSheetRanges(ranges: string[]) {
   return response.data.valueRanges || [];
 }
 
-export async function getSheetRows(sheetName: string, range = 'A1:AE1000') {
+export async function getSheetRows(sheetName: string, range = 'A1:AE') {
   const { sheets, sheetId } = getGoogleSheetsClient();
 
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${sheetName}!${range}`,
+    range: formatSheetRange(sheetName, range),
   });
 
   return response.data.values || [];

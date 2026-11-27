@@ -2,7 +2,22 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import BiobuzzFieldSelector from '@/components/BiobuzzFieldSelector';
+import EventManagerModal from '@/components/EventManagerModal';
 import NautilusNavMenu from '@/components/NautilusNavMenu';
+import {
+  AvailableSheetEvent,
+  DEFAULT_EVENT_KEY,
+  getPitPhotosSheetName,
+  getPitSheetName,
+} from '@/lib/events';
+import {
+  SavedEventSession,
+  readEventCodeFromUrl,
+  readEventStore,
+  removeEventSession,
+  setActiveEventCodeInStore,
+  upsertEventSession,
+} from '@/lib/eventStore';
 
 const SCOUTER_STORAGE_KEY = 'nautilus_4010_scouter_v1';
 const CHUNK_SIZE = 45000;
@@ -29,6 +44,7 @@ type PendingPhoto = {
 
 type SavedPitEntry = {
   id: number;
+  _eventCode?: string;
   Timestamp?: string;
   EQUIPO?: string | number;
   NOMBRE_EQUIPO?: string;
@@ -120,6 +136,13 @@ export default function PitScoutingPage() {
   const [showValidation, setShowValidation] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Eventos simultáneos
+  const [savedEvents, setSavedEvents] = useState<SavedEventSession[]>([]);
+  const [activeEventCode, setActiveEventCode] = useState<string>('');
+  const [availableSheetEvents, setAvailableSheetEvents] = useState<AvailableSheetEvent[]>([]);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [storeReady, setStoreReady] = useState(false);
+
   const [showRecords, setShowRecords] = useState(false);
   const [savedEntries, setSavedEntries] = useState<SavedPitEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
@@ -127,6 +150,28 @@ export default function PitScoutingPage() {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const savedResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchSeqRef = useRef(0);
+
+  const pitSheetName = useMemo(() => getPitSheetName(activeEventCode), [activeEventCode]);
+  const pitPhotosSheetName = useMemo(() => getPitPhotosSheetName(activeEventCode), [activeEventCode]);
+
+  const quickEventCodes = useMemo(() => {
+    const codes: string[] = [];
+    const seen = new Set<string>();
+    for (const ev of savedEvents) {
+      if (ev.code && !seen.has(ev.code)) {
+        seen.add(ev.code);
+        codes.push(ev.code);
+      }
+    }
+    for (const ev of availableSheetEvents) {
+      if (!ev.isDefault && ev.code && !seen.has(ev.code)) {
+        seen.add(ev.code);
+        codes.push(ev.code);
+      }
+    }
+    return codes;
+  }, [savedEvents, availableSheetEvents]);
 
   useEffect(() => {
     photosRef.current = photos;
@@ -134,12 +179,38 @@ export default function PitScoutingPage() {
 
   useEffect(() => {
     try {
+      let store = readEventStore();
+      const urlCode = readEventCodeFromUrl();
+      if (urlCode) {
+        const exists = store.events.some((ev) => ev.code === urlCode);
+        if (exists) {
+          store = setActiveEventCodeInStore(urlCode);
+        } else {
+          store = upsertEventSession(
+            {
+              code: urlCode,
+              name: `Evento ${urlCode}`,
+              season: 2026,
+              isManual: true,
+              matches: [],
+              lockedStation: 'none',
+              lastMatchNum: 1,
+              updatedAt: new Date().toISOString(),
+            },
+            { setActive: true }
+          );
+        }
+      }
+      setSavedEvents(store.events);
+      setActiveEventCode(store.activeEventCode);
+
       const savedScouter = localStorage.getItem(SCOUTER_STORAGE_KEY);
       if (savedScouter) setScouter(savedScouter);
     } catch {
       // ignore storage errors
+    } finally {
+      setStoreReady(true);
     }
-    fetchSavedEntries();
 
     return () => {
       if (savedResetTimerRef.current) clearTimeout(savedResetTimerRef.current);
@@ -152,19 +223,75 @@ export default function PitScoutingPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const fetchSavedEntries = async () => {
+  const fetchSavedEntries = async (targetEventCode = activeEventCode) => {
+    const seq = ++fetchSeqRef.current;
     setLoadingEntries(true);
     try {
-      const res = await fetch('/api/pit');
+      const param = targetEventCode ? targetEventCode : DEFAULT_EVENT_KEY;
+      const res = await fetch(`/api/pit?event=${encodeURIComponent(param)}`);
       const json = await res.json();
-      if (res.ok && json.success && Array.isArray(json.entries)) {
-        setSavedEntries(json.entries.slice().reverse());
+      if (seq !== fetchSeqRef.current) return;
+      if (res.ok && json.success) {
+        if (Array.isArray(json.availableEvents)) {
+          setAvailableSheetEvents(json.availableEvents);
+        }
+        if (Array.isArray(json.entries)) {
+          setSavedEntries(json.entries.slice().reverse());
+        }
       }
     } catch {
       // ignore initial fetch error; user can still submit
     } finally {
-      setLoadingEntries(false);
+      if (seq === fetchSeqRef.current) {
+        setLoadingEntries(false);
+      }
     }
+  };
+
+  useEffect(() => {
+    if (!storeReady) return;
+    setExpandedEntryId(null);
+    void fetchSavedEntries(activeEventCode);
+  }, [storeReady, activeEventCode]);
+
+  const handleSelectEvent = (code: string) => {
+    if (code && !savedEvents.some((ev) => ev.code === code)) {
+      const nextStore = upsertEventSession(
+        {
+          code,
+          name: `Evento ${code}`,
+          season: 2026,
+          isManual: true,
+          matches: [],
+          lockedStation: 'none',
+          lastMatchNum: 1,
+          updatedAt: new Date().toISOString(),
+        },
+        { setActive: true }
+      );
+      setSavedEvents(nextStore.events);
+      setActiveEventCode(nextStore.activeEventCode);
+      showToast(`Evento activo: ${code} (${getPitSheetName(code)})`);
+      return;
+    }
+
+    const nextStore = setActiveEventCodeInStore(code);
+    setSavedEvents(nextStore.events);
+    setActiveEventCode(nextStore.activeEventCode);
+    showToast(`Evento activo: ${nextStore.activeEventCode || 'General'} (${getPitSheetName(nextStore.activeEventCode)})`);
+  };
+
+  const handleAddOrUpdateEvent = (session: SavedEventSession) => {
+    const nextStore = upsertEventSession(session, { setActive: true });
+    setSavedEvents(nextStore.events);
+    setActiveEventCode(nextStore.activeEventCode);
+  };
+
+  const handleRemoveEvent = (code: string) => {
+    const nextStore = removeEventSession(code);
+    setSavedEvents(nextStore.events);
+    setActiveEventCode(nextStore.activeEventCode);
+    showToast(`Evento ${code} quitado`);
   };
 
   const parsedTeam = Number(teamNumber);
@@ -298,6 +425,7 @@ export default function PitScoutingPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              eventCode: activeEventCode,
               photoId,
               teamNumber: parsedTeam,
               fileName: photo.file.name,
@@ -319,7 +447,7 @@ export default function PitScoutingPage() {
         uploadedPhotoIds.push(photoId);
       }
 
-      setSaveProgress('Guardando ficha en Pit_BIOBUZZ...');
+      setSaveProgress(`Guardando ficha en ${pitSheetName}...`);
 
       const resolvedHiveMech =
         hiveMech === 'Shooter'
@@ -333,6 +461,7 @@ export default function PitScoutingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          eventCode: activeEventCode,
           teamNumber: parsedTeam,
           teamName: teamName.trim(),
           scouter: scouter.trim(),
@@ -365,7 +494,7 @@ export default function PitScoutingPage() {
       setSaveProgress(null);
       setSaveState('saved');
       showToast(`Equipo #${parsedTeam} guardado (${uploadedPhotoIds.length} fotos)`);
-      fetchSavedEntries();
+      fetchSavedEntries(activeEventCode);
 
       if (savedResetTimerRef.current) clearTimeout(savedResetTimerRef.current);
       savedResetTimerRef.current = setTimeout(() => {
@@ -396,9 +525,33 @@ export default function PitScoutingPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
           <button
             type="button"
+            onClick={() => setShowEventModal(true)}
+            className="dock-pill-btn mono-tabular"
+            style={{
+              flex: 'none',
+              padding: '6px 8px',
+              fontSize: '11px',
+              background: '#451F66',
+              borderColor: '#EDB824',
+              color: '#FFFFFF',
+              borderRadius: '4px',
+            }}
+            title="Seleccionar evento"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EDB824" strokeWidth="2.4">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            <span>{activeEventCode || 'Evento'}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => {
               setShowRecords((prev) => !prev);
-              if (!showRecords) fetchSavedEntries();
+              if (!showRecords) fetchSavedEntries(activeEventCode);
             }}
             className="dock-pill-btn mono-tabular"
             style={{
@@ -417,13 +570,13 @@ export default function PitScoutingPage() {
       </div>
 
       {/* Título de Sección */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: quickEventCodes.length >= 2 ? '8px' : '12px' }}>
         <div>
           <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', margin: 0, letterSpacing: '0.3px' }}>
             PIT SCOUTING
           </h1>
           <span className="mono-tabular" style={{ fontSize: '11px', color: '#EDB824', fontWeight: 700, textTransform: 'uppercase' }}>
-            BIOBUZZ • Hoja Pit_BIOBUZZ &amp; Pit_Fotos
+            BIOBUZZ • {pitSheetName} &amp; {pitPhotosSheetName}
           </span>
         </div>
         {photos.length > 0 && !showRecords && (
@@ -444,6 +597,63 @@ export default function PitScoutingPage() {
         )}
       </div>
 
+      {/* Selector rápido multi-evento */}
+      {quickEventCodes.length >= 2 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            overflowX: 'auto',
+            paddingBottom: '10px',
+          }}
+        >
+          {quickEventCodes.map((code) => {
+            const isCurrent = code === activeEventCode;
+            return (
+              <button
+                key={code}
+                type="button"
+                onClick={() => handleSelectEvent(code)}
+                className="mono-tabular"
+                style={{
+                  flexShrink: 0,
+                  background: isCurrent ? '#451F66' : '#070733',
+                  border: isCurrent ? '1px solid #EDB824' : '1px solid #451F66',
+                  color: isCurrent ? '#EDB824' : 'var(--nautilus-gray)',
+                  borderRadius: '4px',
+                  padding: '5px 9px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                {code}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setShowEventModal(true)}
+            className="mono-tabular"
+            style={{
+              flexShrink: 0,
+              background: '#070733',
+              border: '1px dashed #451F66',
+              color: 'var(--nautilus-gray)',
+              borderRadius: '4px',
+              padding: '5px 9px',
+              fontSize: '11px',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+            title="Gestionar eventos"
+          >
+            +
+          </button>
+        </div>
+      )}
+
       {/* ================= VISTA DE REGISTROS GUARDADOS ================= */}
       {showRecords ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -451,7 +661,7 @@ export default function PitScoutingPage() {
             <span className="input-duo-label">Equipos inspeccionados ({savedEntries.length})</span>
             <button
               type="button"
-              onClick={fetchSavedEntries}
+              onClick={() => fetchSavedEntries(activeEventCode)}
               disabled={loadingEntries}
               className="dock-pill-btn mono-tabular"
               style={{ flex: 'none', padding: '6px 10px', fontSize: '11px' }}
@@ -473,7 +683,7 @@ export default function PitScoutingPage() {
                 fontWeight: 600,
               }}
             >
-              {loadingEntries ? 'Consultando Pit_BIOBUZZ...' : 'Aún no hay registros en Pit_BIOBUZZ.'}
+              {loadingEntries ? `Consultando ${pitSheetName}...` : `Aún no hay registros en ${pitSheetName}.`}
             </div>
           ) : (
             <div className="glass-list">
@@ -582,7 +792,10 @@ export default function PitScoutingPage() {
                         {entryPhotos.length > 0 && (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
                             {entryPhotos.map((photoId, idx) => {
-                              const src = `/api/pit/photo?id=${encodeURIComponent(photoId)}`;
+                              const photoEvent = entry._eventCode ?? activeEventCode;
+                              const src = `/api/pit/photo?id=${encodeURIComponent(photoId)}${
+                                photoEvent ? `&event=${encodeURIComponent(photoEvent)}` : ''
+                              }`;
                               return (
                                 <button
                                   key={photoId}
@@ -1264,6 +1477,21 @@ export default function PitScoutingPage() {
           )}
         </div>
       )}
+
+      {/* Modal de gestión multi-evento */}
+      <EventManagerModal
+        open={showEventModal}
+        onClose={() => setShowEventModal(false)}
+        savedEvents={savedEvents}
+        activeEventCode={activeEventCode}
+        sheetPreviewPrefix="Pit_BIOBUZZ"
+        showStationLock={false}
+        availableSheetEvents={availableSheetEvents}
+        onSelectEvent={handleSelectEvent}
+        onAddOrUpdateEvent={handleAddOrUpdateEvent}
+        onRemoveEvent={handleRemoveEvent}
+        onToast={showToast}
+      />
 
       {/* Lightbox para ver foto guardada en resolución completa */}
       {lightboxUrl && (

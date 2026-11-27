@@ -1,13 +1,27 @@
 import { NextResponse } from 'next/server';
 import {
   appendRows,
+  batchGetSheetRanges,
   ensureSheetWithHeaders,
+  formatSheetRange,
   getSheetRows,
+  invalidateEnsuredSheet,
+  listSheetTitles,
 } from '@/lib/googleSheets';
+import {
+  ALL_EVENTS_KEY,
+  DEFAULT_EVENT_KEY,
+  MATCH_SHEET_PREFIX,
+  PIT_SHEET_PREFIX,
+  extractAvailableEvents,
+  getPitSheetName,
+  mergeAvailableEvents,
+  normalizeEventCode,
+} from '@/lib/events';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-const PIT_SHEET = 'Pit_BIOBUZZ';
 const PIT_HEADERS = [
   'Timestamp',
   'EQUIPO',
@@ -30,43 +44,101 @@ const PIT_HEADERS = [
   'FOTOS_IDS',
 ];
 
-export async function GET() {
-  try {
-    let rows: any[][];
-    try {
-      rows = await getSheetRows(PIT_SHEET, 'A1:S1000');
-    } catch (err: any) {
-      const msg = String(err?.message || '');
-      if (msg.includes('Unable to parse range')) {
-        return NextResponse.json({ success: true, count: 0, entries: [] });
-      }
-      throw err;
-    }
+function mapRowsToPitEntries(rows: any[][], eventCode: string, sheetName: string, startId: number) {
+  if (!rows || rows.length <= 1) return [];
+  const headers = rows[0];
+  const dataRows = rows.slice(1);
 
-    if (rows.length <= 1) {
-      return NextResponse.json({ success: true, count: 0, entries: [] });
-    }
-
-    const headers = rows[0];
-    const dataRows = rows.slice(1);
-
-    const entries = dataRows
-      .filter((r) => r.some((cell) => String(cell ?? '').trim() !== ''))
-      .map((r, idx) => {
-        const obj: Record<string, any> = { id: idx + 1 };
-        headers.forEach((h: string, colIdx: number) => {
-          obj[h] = r[colIdx] ?? '';
-        });
-        const rawIds = String(obj['FOTOS_IDS'] ?? '');
-        obj.photoIds = rawIds
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean);
-        return obj;
+  return dataRows
+    .filter((r) => r.some((cell) => String(cell ?? '').trim() !== ''))
+    .map((r, idx) => {
+      const obj: Record<string, any> = {
+        id: startId + idx,
+        _eventCode: eventCode,
+        _sheetName: sheetName,
+      };
+      headers.forEach((h: string, colIdx: number) => {
+        obj[h] = r[colIdx] ?? '';
       });
+      const rawIds = String(obj['FOTOS_IDS'] ?? '');
+      obj.photoIds = rawIds
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return obj;
+    });
+}
+
+export async function GET(request: Request) {
+  try {
+    const rawEvent = new URL(request.url).searchParams.get('event')?.trim();
+    const titles = await listSheetTitles();
+    const pitEvents = extractAvailableEvents(titles, PIT_SHEET_PREFIX);
+    const matchEvents = extractAvailableEvents(titles, MATCH_SHEET_PREFIX);
+    const availableEvents = mergeAvailableEvents(pitEvents, matchEvents, PIT_SHEET_PREFIX);
+
+    if (rawEvent && rawEvent.toUpperCase() === ALL_EVENTS_KEY) {
+      if (pitEvents.length === 0) {
+        return NextResponse.json({
+          success: true,
+          eventCode: ALL_EVENTS_KEY,
+          sheetName: ALL_EVENTS_KEY,
+          availableEvents,
+          count: 0,
+          entries: [],
+        });
+      }
+
+      const ranges = pitEvents.map((ev) => formatSheetRange(ev.sheetName, 'A1:S'));
+      const valueRanges = await batchGetSheetRanges(ranges);
+
+      const entries: Record<string, any>[] = [];
+      let nextId = 1;
+      pitEvents.forEach((ev, idx) => {
+        const rows = valueRanges[idx]?.values || [];
+        const mapped = mapRowsToPitEntries(rows, ev.code, ev.sheetName, nextId);
+        nextId += mapped.length;
+        entries.push(...mapped);
+      });
+
+      return NextResponse.json({
+        success: true,
+        eventCode: ALL_EVENTS_KEY,
+        sheetName: ALL_EVENTS_KEY,
+        availableEvents,
+        count: entries.length,
+        entries,
+      });
+    }
+
+    const requestedCode =
+      rawEvent === undefined
+        ? ''
+        : rawEvent.toUpperCase() === DEFAULT_EVENT_KEY
+          ? ''
+          : normalizeEventCode(rawEvent);
+
+    const targetSheet = getPitSheetName(requestedCode);
+
+    if (!titles.includes(targetSheet)) {
+      return NextResponse.json({
+        success: true,
+        eventCode: requestedCode,
+        sheetName: targetSheet,
+        availableEvents,
+        count: 0,
+        entries: [],
+      });
+    }
+
+    const rows = await getSheetRows(targetSheet, 'A1:S');
+    const entries = mapRowsToPitEntries(rows, requestedCode, targetSheet, 1);
 
     return NextResponse.json({
       success: true,
+      eventCode: requestedCode,
+      sheetName: targetSheet,
+      availableEvents,
       count: entries.length,
       entries,
     });
@@ -91,7 +163,10 @@ export async function POST(request: Request) {
       );
     }
 
-    await ensureSheetWithHeaders(PIT_SHEET, PIT_HEADERS);
+    const eventCode = normalizeEventCode(data?.eventCode ?? data?.event);
+    const targetSheet = getPitSheetName(eventCode);
+
+    await ensureSheetWithHeaders(targetSheet, PIT_HEADERS);
 
     const photoIds: string[] = Array.isArray(data.photoIds)
       ? data.photoIds.map((id: unknown) => String(id ?? '').trim()).filter(Boolean)
@@ -132,10 +207,24 @@ export async function POST(request: Request) {
       photoIds.join(','),
     ];
 
-    const result = await appendRows(PIT_SHEET, [row], 'RAW');
+    let result;
+    try {
+      result = await appendRows(targetSheet, [row], 'RAW');
+    } catch (err: any) {
+      const msg = String(err?.message || '');
+      if (msg.includes('Unable to parse range')) {
+        invalidateEnsuredSheet(targetSheet);
+        await ensureSheetWithHeaders(targetSheet, PIT_HEADERS);
+        result = await appendRows(targetSheet, [row], 'RAW');
+      } else {
+        throw err;
+      }
+    }
 
     return NextResponse.json({
       success: true,
+      eventCode,
+      sheetName: targetSheet,
       updatedRange: result.updates?.updatedRange,
       photoCount: photoIds.length,
     });

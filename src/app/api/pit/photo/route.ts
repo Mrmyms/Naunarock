@@ -3,12 +3,20 @@ import {
   appendRows,
   batchGetSheetRanges,
   ensureSheetWithHeaders,
+  formatSheetRange,
   getSheetRows,
+  invalidateEnsuredSheet,
+  listSheetTitles,
 } from '@/lib/googleSheets';
+import {
+  PIT_PHOTOS_SHEET_PREFIX,
+  getPitPhotosSheetName,
+  normalizeEventCode,
+} from '@/lib/events';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-const PIT_PHOTOS_SHEET = 'Pit_Fotos';
 const MAX_CELL_CHARS = 45000;
 const PIT_PHOTOS_HEADERS = [
   'Timestamp',
@@ -75,7 +83,10 @@ export async function POST(request: Request) {
       }
     }
 
-    await ensureSheetWithHeaders(PIT_PHOTOS_SHEET, PIT_PHOTOS_HEADERS);
+    const eventCode = normalizeEventCode(body?.eventCode ?? body?.event);
+    const photosSheet = getPitPhotosSheetName(eventCode);
+
+    await ensureSheetWithHeaders(photosSheet, PIT_PHOTOS_HEADERS);
 
     const timestamp = new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey' });
     const cleanPhotoId = photoId.trim();
@@ -94,11 +105,24 @@ export async function POST(request: Request) {
     ]);
 
     // Usar RAW evita que fragmentos Base64 que inicien con '+' o '=' se evalúen como fórmulas
-    await appendRows(PIT_PHOTOS_SHEET, rows, 'RAW');
+    try {
+      await appendRows(photosSheet, rows, 'RAW');
+    } catch (err: any) {
+      const msg = String(err?.message || '');
+      if (msg.includes('Unable to parse range')) {
+        invalidateEnsuredSheet(photosSheet);
+        await ensureSheetWithHeaders(photosSheet, PIT_PHOTOS_HEADERS);
+        await appendRows(photosSheet, rows, 'RAW');
+      } else {
+        throw err;
+      }
+    }
 
     return NextResponse.json({
       success: true,
       photoId: cleanPhotoId,
+      eventCode,
+      sheetName: photosSheet,
       partsSaved: rows.length,
     });
   } catch (error: any) {
@@ -123,6 +147,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id')?.trim();
+    const eventCode = normalizeEventCode(searchParams.get('event'));
 
     if (!id) {
       return NextResponse.json(
@@ -131,34 +156,52 @@ export async function GET(request: Request) {
       );
     }
 
-    let metaRows: any[][];
-    try {
-      metaRows = await getSheetRows(PIT_PHOTOS_SHEET, 'A2:I50000');
-    } catch (err: any) {
-      const msg = String(err?.message || '');
-      if (msg.includes('Unable to parse range')) {
-        return NextResponse.json(
-          { success: false, error: 'Foto no encontrada' },
-          { status: 404 }
-        );
+    const titles = await listSheetTitles();
+    const candidateSheets: string[] = [];
+
+    if (eventCode) {
+      const targetSheet = getPitPhotosSheetName(eventCode);
+      if (titles.includes(targetSheet)) {
+        candidateSheets.push(targetSheet);
       }
-      throw err;
+    } else {
+      if (titles.includes(PIT_PHOTOS_SHEET_PREFIX)) {
+        candidateSheets.push(PIT_PHOTOS_SHEET_PREFIX);
+      }
+      for (const title of titles) {
+        if (title.startsWith(`${PIT_PHOTOS_SHEET_PREFIX}_`)) {
+          candidateSheets.push(title);
+        }
+      }
     }
 
-    const matches: PhotoChunkMatch[] = [];
-    metaRows.forEach((row, idx) => {
-      if (String(row[1] || '').trim() === id) {
-        matches.push({
-          rowNum: idx + 2,
-          part: Number(row[6]) || 0,
-          totalParts: Number(row[7]) || 1,
-          mimeType: String(row[4] || 'application/octet-stream'),
-          fileName: String(row[3] || 'photo'),
-        });
-      }
-    });
+    let foundSheet: string | null = null;
+    let matches: PhotoChunkMatch[] = [];
 
-    if (matches.length === 0) {
+    for (const sheetName of candidateSheets) {
+      const metaRows = await getSheetRows(sheetName, 'A2:I');
+      const sheetMatches: PhotoChunkMatch[] = [];
+
+      metaRows.forEach((row, idx) => {
+        if (String(row[1] || '').trim() === id) {
+          sheetMatches.push({
+            rowNum: idx + 2,
+            part: Number(row[6]) || 0,
+            totalParts: Number(row[7]) || 1,
+            mimeType: String(row[4] || 'application/octet-stream'),
+            fileName: String(row[3] || 'photo'),
+          });
+        }
+      });
+
+      if (sheetMatches.length > 0) {
+        foundSheet = sheetName;
+        matches = sheetMatches;
+        break;
+      }
+    }
+
+    if (!foundSheet || matches.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Foto no encontrada' },
         { status: 404 }
@@ -179,7 +222,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const ranges = runs.map((r) => `${PIT_PHOTOS_SHEET}!J${r.startRow}:J${r.endRow}`);
+    const ranges = runs.map((r) => formatSheetRange(foundSheet!, `J${r.startRow}:J${r.endRow}`));
     const valueRanges = await batchGetSheetRanges(ranges);
 
     runs.forEach((run, runIdx) => {

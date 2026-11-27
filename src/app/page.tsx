@@ -6,6 +6,18 @@ import BiobuzzFieldSelector, {
   RED_START_ZONES,
 } from '@/components/BiobuzzFieldSelector';
 import NautilusNavMenu from '@/components/NautilusNavMenu';
+import EventManagerModal from '@/components/EventManagerModal';
+import { getMatchSheetName } from '@/lib/events';
+import {
+  SavedEventSession,
+  StationLock,
+  readEventCodeFromUrl,
+  readEventStore,
+  removeEventSession,
+  setActiveEventCodeInStore,
+  updateEventSessionFields,
+  upsertEventSession,
+} from '@/lib/eventStore';
 import {
   QueuedScoutEntry,
   enqueueScoutPayload,
@@ -14,28 +26,6 @@ import {
   syncScoutQueue,
 } from '@/lib/offlineQueue';
 
-type ScheduleTeam = {
-  teamNumber: number;
-  alliance: 'Red' | 'Blue';
-  station: 'One' | 'Two';
-};
-
-type ScheduleMatch = {
-  id: number;
-  matchNum: number;
-  tournamentLevel: string;
-  teams: ScheduleTeam[];
-};
-
-type EventInfo = {
-  code: string;
-  name: string;
-  season: number;
-};
-
-type StationLock = 'none' | 'Blue-One' | 'Blue-Two' | 'Red-One' | 'Red-Two';
-
-const STORAGE_KEY = 'nautilus_4010_event_schedule_v1';
 const SCOUTER_STORAGE_KEY = 'nautilus_4010_scouter_v1';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'queued' | 'error';
@@ -162,16 +152,19 @@ export default function MatchScoutingPage() {
   const [scouter, setScouter] = useState('');
   const [currentTab, setCurrentTab] = useState<'auto' | 'teleop' | 'endgame'>('auto');
 
-  // Evento y Schedule (FTCScout)
-  const [eventInfo, setEventInfo] = useState<EventInfo | null>(null);
-  const [scheduleMatches, setScheduleMatches] = useState<ScheduleMatch[]>([]);
-  const [lockedStation, setLockedStation] = useState<StationLock>('none');
+  // Eventos simultáneos y Schedule (FTCScout / Manual)
+  const [savedEvents, setSavedEvents] = useState<SavedEventSession[]>([]);
+  const [activeEventCode, setActiveEventCode] = useState<string>('');
   const [showEventModal, setShowEventModal] = useState(false);
-  const [searchSeason, setSearchSeason] = useState(2026);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{ code: string; name: string; regionCode: string; start: string }[]>([]);
-  const [searchingEvents, setSearchingEvents] = useState(false);
-  const [loadingEvent, setLoadingEvent] = useState(false);
+  const isStoreHydratedRef = useRef(false);
+
+  const activeEvent = useMemo(
+    () => savedEvents.find((ev) => ev.code === activeEventCode) ?? null,
+    [savedEvents, activeEventCode]
+  );
+  const scheduleMatches = activeEvent?.matches ?? [];
+  const lockedStation: StationLock = activeEvent?.lockedStation ?? 'none';
+  const activeSheetName = useMemo(() => getMatchSheetName(activeEventCode), [activeEventCode]);
 
   // AUTO (30s)
   const [startPos, setStartPos] = useState<string>('');
@@ -274,20 +267,45 @@ export default function MatchScoutingPage() {
     }
   };
 
-  // Cargar evento, scouter y cola offline guardados en localStorage al iniciar
+  // Cargar eventos, scouter y cola offline guardados en localStorage al iniciar
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.eventInfo) setEventInfo(parsed.eventInfo);
-        if (Array.isArray(parsed.matches)) setScheduleMatches(parsed.matches);
-        if (parsed.lockedStation) setLockedStation(parsed.lockedStation);
+      let store = readEventStore();
+      const urlCode = readEventCodeFromUrl();
+      if (urlCode) {
+        const exists = store.events.some((ev) => ev.code === urlCode);
+        if (exists) {
+          store = setActiveEventCodeInStore(urlCode);
+        } else {
+          store = upsertEventSession(
+            {
+              code: urlCode,
+              name: `Evento ${urlCode}`,
+              season: 2026,
+              isManual: true,
+              matches: [],
+              lockedStation: 'none',
+              lastMatchNum: 1,
+              updatedAt: new Date().toISOString(),
+            },
+            { setActive: true }
+          );
+        }
       }
+
+      setSavedEvents(store.events);
+      setActiveEventCode(store.activeEventCode);
+      const initialEvent = store.events.find((ev) => ev.code === store.activeEventCode);
+      if (initialEvent?.lastMatchNum) {
+        setMatch(initialEvent.lastMatchNum);
+      }
+
       const savedScouter = localStorage.getItem(SCOUTER_STORAGE_KEY);
       if (savedScouter) setScouter(savedScouter);
     } catch (e) {
       console.error('Error leyendo datos de localStorage:', e);
+    } finally {
+      isStoreHydratedRef.current = true;
     }
 
     const initialQueue = readScoutQueue();
@@ -319,6 +337,13 @@ export default function MatchScoutingPage() {
     };
   }, []);
 
+  // Persistir número de match por evento activo
+  useEffect(() => {
+    if (!isStoreHydratedRef.current || !activeEventCode) return;
+    const nextStore = updateEventSessionFields(activeEventCode, { lastMatchNum: match });
+    setSavedEvents(nextStore.events);
+  }, [match, activeEventCode]);
+
   // Obtener el partido actual del schedule (priorizando Quals)
   const currentMatchSchedule = useMemo(() => {
     if (!scheduleMatches.length) return null;
@@ -342,78 +367,35 @@ export default function MatchScoutingPage() {
     }
   }, [currentMatchSchedule, lockedStation]);
 
-  const persistEventData = (info: EventInfo | null, matches: ScheduleMatch[], station: StationLock) => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ eventInfo: info, matches, lockedStation: station })
-      );
-    } catch (e) {
-      console.error('Error guardando evento en localStorage:', e);
-    }
+  const handleSelectEvent = (code: string) => {
+    const nextStore = setActiveEventCodeInStore(code);
+    setSavedEvents(nextStore.events);
+    setActiveEventCode(nextStore.activeEventCode);
+    const chosen = nextStore.events.find((ev) => ev.code === nextStore.activeEventCode);
+    setMatch(chosen?.lastMatchNum || 1);
+    showToast(`Evento activo: ${nextStore.activeEventCode || 'General'} (${getMatchSheetName(nextStore.activeEventCode)})`);
   };
 
-  const handleSearchEvents = async () => {
-    setSearchingEvents(true);
-    try {
-      const params = new URLSearchParams({
-        action: 'search',
-        season: String(searchSeason),
-      });
-      if (searchQuery.trim()) {
-        params.set('q', searchQuery.trim());
-      }
-      const res = await fetch(`/api/event?${params.toString()}`);
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.error || 'Error buscando eventos');
-      setSearchResults(json.events || []);
-    } catch (err: any) {
-      showToast(err.message || 'Error al buscar eventos');
-    } finally {
-      setSearchingEvents(false);
-    }
+  const handleAddOrUpdateEvent = (session: SavedEventSession) => {
+    const nextStore = upsertEventSession(session, { setActive: true });
+    setSavedEvents(nextStore.events);
+    setActiveEventCode(nextStore.activeEventCode);
+    setMatch(session.lastMatchNum || 1);
   };
 
-  const handleLoadEventByCode = async (code: string) => {
-    const cleanCode = code.trim().toUpperCase();
-    if (!cleanCode) return;
-    setLoadingEvent(true);
-    try {
-      const res = await fetch(`/api/event?season=${searchSeason}&code=${encodeURIComponent(cleanCode)}`);
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'No se pudo cargar el evento');
-      }
-      const info: EventInfo = {
-        code: json.event.code,
-        name: json.event.name,
-        season: json.event.season,
-      };
-      const loadedMatches: ScheduleMatch[] = json.matches || [];
-      setEventInfo(info);
-      setScheduleMatches(loadedMatches);
-      persistEventData(info, loadedMatches, lockedStation);
-      setShowEventModal(false);
-      showToast(`${info.code}: ${loadedMatches.length} partidos cargados`);
-    } catch (err: any) {
-      showToast(err.message || 'Error cargando evento');
-    } finally {
-      setLoadingEvent(false);
-    }
+  const handleRemoveEvent = (code: string) => {
+    const nextStore = removeEventSession(code);
+    setSavedEvents(nextStore.events);
+    setActiveEventCode(nextStore.activeEventCode);
+    const nextActive = nextStore.events.find((ev) => ev.code === nextStore.activeEventCode);
+    setMatch(nextActive?.lastMatchNum || 1);
+    showToast(`Evento ${code} quitado`);
   };
 
   const handleStationChange = (station: StationLock) => {
-    setLockedStation(station);
-    persistEventData(eventInfo, scheduleMatches, station);
-  };
-
-  const handleClearEvent = () => {
-    setEventInfo(null);
-    setScheduleMatches([]);
-    setLockedStation('none');
-    localStorage.removeItem(STORAGE_KEY);
-    setShowEventModal(false);
-    showToast('Evento desconectado (modo manual)');
+    if (!activeEventCode) return;
+    const nextStore = updateEventSessionFields(activeEventCode, { lockedStation: station });
+    setSavedEvents(nextStore.events);
   };
 
   const handleResetForNextMatch = () => {
@@ -471,6 +453,8 @@ export default function MatchScoutingPage() {
     const captureTimestamp = new Date().toLocaleString('es-MX', { timeZone: 'America/Monterrey' });
     const payload = {
       timestamp: captureTimestamp,
+      eventCode: activeEventCode,
+      eventName: activeEvent?.name || '',
       match,
       team,
       alliance: alliance === 'blue' ? 'AZUL' : 'ROJO',
@@ -512,7 +496,7 @@ export default function MatchScoutingPage() {
         navigator.vibrate?.([30, 30, 30]);
       }
       setSaveState('queued');
-      showToast(`Guardado en cola local (M#${match} #${team})`);
+      showToast(`Guardado en cola local [${activeEventCode || 'General'}] (M#${match} #${team})`);
       if (savedResetTimerRef.current) clearTimeout(savedResetTimerRef.current);
       savedResetTimerRef.current = setTimeout(() => {
         setSaveState('idle');
@@ -659,7 +643,15 @@ export default function MatchScoutingPage() {
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            <span>{eventInfo ? eventInfo.code : 'Evento'}</span>
+            <span>
+              {activeEvent
+                ? savedEvents.length > 1
+                  ? `${activeEvent.code} (${savedEvents.length})`
+                  : activeEvent.code
+                : savedEvents.length > 0
+                  ? `General (${savedEvents.length})`
+                  : 'Evento'}
+            </span>
           </button>
 
           {saveState === 'saved' || saveState === 'queued' ? (
@@ -710,6 +702,96 @@ export default function MatchScoutingPage() {
           )}
         </div>
       </div>
+
+      {/* Barra rápida multi-evento / indicador de hoja destino */}
+      {savedEvents.length >= 2 ? (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            overflowX: 'auto',
+            paddingBottom: '10px',
+            marginTop: '-4px',
+          }}
+        >
+          {savedEvents.map((ev) => {
+            const isCurrent = ev.code === activeEventCode;
+            return (
+              <button
+                key={ev.code}
+                type="button"
+                onClick={() => handleSelectEvent(ev.code)}
+                className="mono-tabular"
+                style={{
+                  flexShrink: 0,
+                  background: isCurrent ? '#451F66' : '#070733',
+                  border: isCurrent ? '1px solid #EDB824' : '1px solid #451F66',
+                  color: isCurrent ? '#EDB824' : 'var(--nautilus-gray)',
+                  borderRadius: '4px',
+                  padding: '5px 9px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                {ev.code}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setShowEventModal(true)}
+            className="mono-tabular"
+            style={{
+              flexShrink: 0,
+              background: '#070733',
+              border: '1px dashed #451F66',
+              color: 'var(--nautilus-gray)',
+              borderRadius: '4px',
+              padding: '5px 9px',
+              fontSize: '11px',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+            title="Gestionar o agregar eventos"
+          >
+            +
+          </button>
+          <span
+            className="mono-tabular"
+            style={{
+              marginLeft: 'auto',
+              fontSize: '10px',
+              color: 'var(--nautilus-gray)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            → {activeSheetName}
+          </span>
+        </div>
+      ) : activeEvent ? (
+        <div
+          className="mono-tabular"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '10px',
+            color: 'var(--nautilus-gray)',
+            paddingBottom: '10px',
+            marginTop: '-4px',
+          }}
+        >
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {activeEvent.name}
+          </span>
+          <span style={{ color: '#EDB824', fontWeight: 700, flexShrink: 0 }}>
+            Hoja: {activeSheetName}
+          </span>
+        </div>
+      ) : null}
 
       {/* Alianza & Match Info */}
       <div className="action-dock" style={{ gap: '8px', padding: '0 0 14px 0' }}>
@@ -1349,249 +1431,20 @@ export default function MatchScoutingPage() {
         )}
       </div>
 
-      {/* Modal Glassmorphic de Evento FTCScout */}
-      {showEventModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(1, 1, 20, 0.84)',
-            zIndex: 250,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-          }}
-          onClick={() => setShowEventModal(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              background: '#04042B',
-              border: '2px solid #451F66',
-              borderRadius: '6px',
-              padding: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px',
-              maxHeight: '85vh',
-              overflowY: 'auto',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #451F66', paddingBottom: '10px' }}>
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>
-                  Evento FTC (Schedule)
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--nautilus-gray)' }}>
-                  Autocompleta equipos y alianzas por match
-                </div>
-              </div>
-              <button
-                onClick={() => setShowEventModal(false)}
-                className="header-action-icon"
-                style={{ width: '32px', height: '32px' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {eventInfo && (
-              <div
-                style={{
-                  background: '#070733',
-                  border: '1px solid #EDB824',
-                  borderRadius: '4px',
-                  padding: '10px 14px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
-                <div>
-                  <div className="mono-tabular" style={{ fontSize: '12px', fontWeight: 800, color: '#EDB824' }}>
-                    {eventInfo.code} ({eventInfo.season})
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#FFFFFF' }}>{eventInfo.name}</div>
-                  <div className="mono-tabular" style={{ fontSize: '10px', color: 'var(--nautilus-gray)' }}>
-                    {scheduleMatches.length} partidos en memoria
-                  </div>
-                </div>
-                <button
-                  onClick={handleClearEvent}
-                  style={{
-                    background: '#451F66',
-                    border: '1px solid #EF4444',
-                    color: '#FCA5A5',
-                    borderRadius: '4px',
-                    padding: '6px 10px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Quitar
-                </button>
-              </div>
-            )}
-
-            {/* Estación fija del Scouter */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--nautilus-gray)', textTransform: 'uppercase' }}>
-                Estación fija del scouter (opcional)
-              </span>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
-                {(
-                  [
-                    { id: 'none', label: 'Libre' },
-                    { id: 'Blue-One', label: 'Azul 1' },
-                    { id: 'Blue-Two', label: 'Azul 2' },
-                    { id: 'Red-One', label: 'Rojo 1' },
-                    { id: 'Red-Two', label: 'Rojo 2' },
-                  ] as { id: StationLock; label: string }[]
-                ).map((st) => (
-                  <button
-                    key={st.id}
-                    onClick={() => handleStationChange(st.id)}
-                    style={{
-                      background: '#070733',
-                      border: lockedStation === st.id ? '2px solid #EDB824' : '1px solid #451F66',
-                      color: lockedStation === st.id ? '#EDB824' : 'var(--nautilus-gray)',
-                      borderRadius: '4px',
-                      padding: '8px 4px',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {st.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Temporada + Búsqueda / Código */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {[2026, 2025, 2024].map((yr) => (
-                  <button
-                    key={yr}
-                    onClick={() => setSearchSeason(yr)}
-                    className="mono-tabular"
-                    style={{
-                      flex: 1,
-                      background: searchSeason === yr ? '#451F66' : '#070733',
-                      border: searchSeason === yr ? '2px solid #EDB824' : '1px solid #451F66',
-                      color: searchSeason === yr ? '#EDB824' : 'var(--nautilus-gray)',
-                      borderRadius: '4px',
-                      padding: '8px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {yr}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  placeholder="Buscar nombre o código (ej. Mexico, MXCMP)"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSearchEvents();
-                  }}
-                  style={{
-                    flex: 1,
-                    background: '#070733',
-                    border: '1px solid #451F66',
-                    borderRadius: '4px',
-                    padding: '10px 12px',
-                    color: '#FFFFFF',
-                    fontSize: '13px',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  onClick={handleSearchEvents}
-                  disabled={searchingEvents}
-                  className="dock-pill-btn"
-                  style={{
-                    flex: 'none',
-                    padding: '10px 14px',
-                    background: '#EDB824',
-                    color: '#010124',
-                    borderColor: '#EDB824',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                  }}
-                >
-                  {searchingEvents ? '...' : 'Buscar'}
-                </button>
-              </div>
-
-              {searchQuery.trim().length >= 3 && (
-                <button
-                  onClick={() => handleLoadEventByCode(searchQuery)}
-                  disabled={loadingEvent}
-                  className="mono-tabular"
-                  style={{
-                    background: '#070733',
-                    border: '1px dashed #EDB824',
-                    borderRadius: '4px',
-                    padding: '8px',
-                    color: '#EDB824',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {loadingEvent ? 'Cargando...' : `Cargar directo "${searchQuery.trim().toUpperCase()}"`}
-                </button>
-              )}
-            </div>
-
-            {/* Resultados de búsqueda */}
-            {searchResults.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
-                {searchResults.map((ev) => (
-                  <button
-                    key={ev.code}
-                    onClick={() => handleLoadEventByCode(ev.code)}
-                    disabled={loadingEvent}
-                    style={{
-                      textAlign: 'left',
-                      background: '#070733',
-                      border: '1px solid #451F66',
-                      borderRadius: '4px',
-                      padding: '10px 12px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#FFFFFF' }}>{ev.name}</div>
-                      <div className="mono-tabular" style={{ fontSize: '10px', color: 'var(--nautilus-gray)' }}>
-                        {ev.code} • {ev.regionCode} • {ev.start}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#EDB824' }}>Elegir →</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <EventManagerModal
+        open={showEventModal}
+        onClose={() => setShowEventModal(false)}
+        savedEvents={savedEvents}
+        activeEventCode={activeEventCode}
+        sheetPreviewPrefix="Captura_BIOBUZZ"
+        showStationLock={true}
+        lockedStation={lockedStation}
+        onSelectEvent={handleSelectEvent}
+        onAddOrUpdateEvent={handleAddOrUpdateEvent}
+        onRemoveEvent={handleRemoveEvent}
+        onStationChange={handleStationChange}
+        onToast={showToast}
+      />
       {/* Modal de Cola Offline */}
       {showQueueModal && (
         <div
@@ -1707,8 +1560,20 @@ export default function MatchScoutingPage() {
                     }}
                   >
                     <div style={{ minWidth: 0 }}>
-                      <div className="mono-tabular" style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF' }}>
-                        M#{item.payload.match} • #{item.payload.team} • {item.payload.alliance}
+                      <div className="mono-tabular" style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            padding: '1px 5px',
+                            borderRadius: '3px',
+                            background: '#010124',
+                            border: '1px solid #EDB824',
+                            color: '#EDB824',
+                          }}
+                        >
+                          {item.payload.eventCode || 'General'}
+                        </span>
+                        <span>M#{item.payload.match} • #{item.payload.team} • {item.payload.alliance}</span>
                       </div>
                       <div className="mono-tabular" style={{ fontSize: '10px', color: 'var(--nautilus-gray)', marginTop: '2px' }}>
                         {item.capturedAt}

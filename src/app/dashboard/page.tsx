@@ -1,47 +1,140 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import NautilusNavMenu from '@/components/NautilusNavMenu';
+import {
+  ALL_EVENTS_KEY,
+  AvailableSheetEvent,
+  DEFAULT_EVENT_KEY,
+  getMatchSheetName,
+} from '@/lib/events';
+import { readEventCodeFromUrl, readEventStore } from '@/lib/eventStore';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [matches, setMatches] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  const [availableEvents, setAvailableEvents] = useState<AvailableSheetEvent[]>([]);
+  const [localEventCodes, setLocalEventCodes] = useState<string[]>([]);
+  const [activeSheetName, setActiveSheetName] = useState<string>('Captura_BIOBUZZ');
 
-  const fetchMatches = async () => {
+  const fetchSeqRef = useRef(0);
+
+  const fetchMatches = async (targetEvent: string | null) => {
+    const seq = ++fetchSeqRef.current;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/data');
+      let url = '/api/data';
+      if (targetEvent !== null) {
+        const param = targetEvent === '' ? DEFAULT_EVENT_KEY : targetEvent;
+        url = `/api/data?event=${encodeURIComponent(param)}`;
+      }
+      const res = await fetch(url);
       const data = await res.json();
+      if (seq !== fetchSeqRef.current) return;
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Error al obtener datos');
       }
       setMatches(data.matches || []);
+      if (Array.isArray(data.availableEvents)) {
+        setAvailableEvents(data.availableEvents);
+      }
+      if (typeof data.sheetName === 'string') {
+        setActiveSheetName(data.sheetName);
+      }
+      if (targetEvent === null && typeof data.eventCode === 'string') {
+        setSelectedEvent(data.eventCode);
+      }
     } catch (err: any) {
+      if (seq !== fetchSeqRef.current) return;
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (seq === fetchSeqRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchMatches();
+    const store = readEventStore();
+    setLocalEventCodes(store.events.map((ev) => ev.code));
+
+    const urlCode = readEventCodeFromUrl();
+    const initialCode = urlCode || store.activeEventCode;
+
+    if (initialCode) {
+      setSelectedEvent(initialCode);
+      setActiveSheetName(getMatchSheetName(initialCode));
+      void fetchMatches(initialCode);
+    } else {
+      void fetchMatches(null);
+    }
   }, []);
+
+  const eventOptions = useMemo(() => {
+    const options: { code: string; label: string }[] = [];
+    const seen = new Set<string>();
+
+    for (const ev of availableEvents) {
+      if (!seen.has(ev.code)) {
+        seen.add(ev.code);
+        options.push({ code: ev.code, label: ev.label });
+      }
+    }
+
+    for (const code of localEventCodes) {
+      if (code && !seen.has(code)) {
+        seen.add(code);
+        options.push({ code, label: code });
+      }
+    }
+
+    if (selectedEvent && selectedEvent !== ALL_EVENTS_KEY && !seen.has(selectedEvent)) {
+      seen.add(selectedEvent);
+      options.push({ code: selectedEvent, label: selectedEvent });
+    }
+
+    return options;
+  }, [availableEvents, localEventCodes, selectedEvent]);
+
+  const handleSelectEventFilter = (code: string) => {
+    setSelectedEvent(code);
+    setActiveSheetName(code === ALL_EVENTS_KEY ? 'Todos los eventos' : getMatchSheetName(code));
+    void fetchMatches(code);
+  };
 
   // Aggregated team stats
   const teamStats: Record<
     string,
-    { team: number; count: number; totalNet: number; totalBalancin: number; totalFlor: number; totalFouls: number }
+    {
+      team: number;
+      count: number;
+      totalNet: number;
+      totalBalancin: number;
+      totalFlor: number;
+      totalFouls: number;
+      events: Set<string>;
+    }
   > = {};
 
   matches.forEach((m) => {
     const t = m['Equipo #'] || m['EQUIPO'] || m.team;
     if (!t) return;
     if (!teamStats[t]) {
-      teamStats[t] = { team: Number(t), count: 0, totalNet: 0, totalBalancin: 0, totalFlor: 0, totalFouls: 0 };
+      teamStats[t] = {
+        team: Number(t),
+        count: 0,
+        totalNet: 0,
+        totalBalancin: 0,
+        totalFlor: 0,
+        totalFouls: 0,
+        events: new Set<string>(),
+      };
     }
     teamStats[t].count += 1;
+    teamStats[t].events.add(m._eventCode ? String(m._eventCode) : 'General');
 
     const autoBalancin =
       Number(m['AUTO HIVE POLLEN'] ?? m['Auto Balancín Polen'] ?? 0) +
@@ -69,6 +162,11 @@ export default function DashboardPage() {
 
   const rankedTeams = Object.values(teamStats).sort((a, b) => b.totalNet / b.count - a.totalNet / a.count);
 
+  const subtitleLabel =
+    selectedEvent === ALL_EVENTS_KEY
+      ? 'Todos los eventos'
+      : activeSheetName;
+
   return (
     <>
       {/* Header Nautilus Telemetría */}
@@ -77,7 +175,7 @@ export default function DashboardPage() {
 
         <button
           type="button"
-          onClick={fetchMatches}
+          onClick={() => fetchMatches(selectedEvent)}
           disabled={loading}
           className="dock-pill-btn mono-tabular"
           style={{
@@ -105,9 +203,68 @@ export default function DashboardPage() {
           TELEMETRÍA EN VIVO
         </h1>
         <span className="mono-tabular" style={{ fontSize: '11px', color: '#EDB824', fontWeight: 700, textTransform: 'uppercase' }}>
-          Nautilus 4010 • Google Sheets (Captura_BIOBUZZ)
+          Nautilus 4010 • Google Sheets ({subtitleLabel})
         </span>
       </div>
+
+      {/* Selector de Evento */}
+      {eventOptions.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            overflowX: 'auto',
+            paddingBottom: '12px',
+          }}
+        >
+          {eventOptions.map((ev) => {
+            const isCurrent = selectedEvent === ev.code;
+            return (
+              <button
+                key={ev.code || DEFAULT_EVENT_KEY}
+                type="button"
+                onClick={() => handleSelectEventFilter(ev.code)}
+                className="mono-tabular"
+                style={{
+                  flexShrink: 0,
+                  background: isCurrent ? '#451F66' : '#070733',
+                  border: isCurrent ? '1px solid #EDB824' : '1px solid #451F66',
+                  color: isCurrent ? '#EDB824' : 'var(--nautilus-gray)',
+                  borderRadius: '4px',
+                  padding: '6px 10px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                {ev.label}
+              </button>
+            );
+          })}
+
+          {eventOptions.length >= 2 && (
+            <button
+              type="button"
+              onClick={() => handleSelectEventFilter(ALL_EVENTS_KEY)}
+              className="mono-tabular"
+              style={{
+                flexShrink: 0,
+                background: selectedEvent === ALL_EVENTS_KEY ? '#451F66' : '#070733',
+                border: selectedEvent === ALL_EVENTS_KEY ? '1px solid #EDB824' : '1px solid #451F66',
+                color: selectedEvent === ALL_EVENTS_KEY ? '#EDB824' : 'var(--nautilus-gray)',
+                borderRadius: '4px',
+                padding: '6px 10px',
+                fontSize: '11px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              Todos
+            </button>
+          )}
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {error && (
@@ -193,7 +350,7 @@ export default function DashboardPage() {
               >
                 {loading
                   ? 'Consultando registros en Google Sheets...'
-                  : 'Sin registros en la base de datos. Completa un formulario en Match Scouting.'}
+                  : 'Sin registros para este evento. Completa un formulario en Match Scouting.'}
               </div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
@@ -236,7 +393,12 @@ export default function DashboardPage() {
                           {idx + 1}
                         </td>
                         <td className="mono-tabular" style={{ padding: '11px 8px', fontWeight: 800, color: '#FFFFFF' }}>
-                          #{team.team}
+                          <div>#{team.team}</div>
+                          {selectedEvent === ALL_EVENTS_KEY && (
+                            <div style={{ fontSize: '9px', fontWeight: 600, color: 'var(--nautilus-gray)' }}>
+                              {Array.from(team.events).join(', ')}
+                            </div>
+                          )}
                         </td>
                         <td className="mono-tabular" style={{ padding: '11px 8px', color: 'var(--nautilus-gray)', fontWeight: 700 }}>
                           {team.count}
